@@ -20,24 +20,38 @@ void loop()
   //temperature=readTempSensor();
   int temperature= generateTempTest();
   displayTempTest(temperature);
-  byte test=intToByte(temperature);
+  String test=intToBitString(temperature);
   displayTemperature(test);
 
 }
 /**
  * This function converts the integer temp to a byte
  */
-byte intToByte(int temperature)
+String intToBitString(int temperature)
 {
   if(temperature <= 63 || temperature >= -64) //possible range of values the the 7 LEDs can display
   {
-    byte char_variable = (byte) temperature;
-    return char_variable;
+    int startingIndex=0;
+    String wholeByte=String((byte)temperature, BIN); //converting the temperature to a bit string; the size of the bit string depends on where the last 1 is ==> ie if the MSB is 1,
+                                         //then the size of the bit string is 8
+    if(wholeByte.length()==8){return wholeByte.substring(1, 8);} //return the last 7 bits
+    else
+    {
+      Serial.println(7-wholeByte.length());
+      for(int i = 0; i<= (7-wholeByte.length()); i++)
+      {
+        Serial.println(wholeByte);
+        wholeByte= "0" + wholeByte; //adding the extras 0s
+        
+      }
+      return wholeByte;
+    }
   }
+  else{return "error";} //trying to display a temp val it can't
 }
-void displayTemperature(byte bTemp)
+void displayTemperature(String bTemp)
 {
-  int startingIndex=0;
+  /*int startingIndex=0;
   String wholeByte=String(bTemp, BIN);
   if(wholeByte.length() == 8) //will only have a length of 8 when # is negative 
   { 
@@ -54,8 +68,8 @@ void displayTemperature(byte bTemp)
   {
     Serial.print(wholeByte.charAt(i));
   }
-  Serial.println();
-  
+  Serial.println();*/
+  Serial.println(bTemp);
   
 }
 /**
