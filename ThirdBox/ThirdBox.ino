@@ -5,7 +5,6 @@ int tempPin=0; //(analog) connected to A0
 short buttonPin=2; //don't worry about this button yet
 //later add wifi pins
 int temperature=0;
-int ASCIIconversion=48;
 void setup() 
 {
   for(int i=0; i<LEDS_NUM; i++) //configure LEDs
@@ -21,14 +20,43 @@ void loop()
   //temperature=readTempSensor();
   int temperature= generateTempTest();
   displayTempTest(temperature);
+  byte test=intToByte(temperature);
+  displayTemperature(test);
 
 }
-void intToBinary(int temperature)
+/**
+ * This function converts the integer temp to a byte
+ */
+byte intToByte(int temperature)
 {
-  byte char_variable = (byte) temperature;
+  if(temperature <= 63 || temperature >= -64) //possible range of values the the 7 LEDs can display
+  {
+    byte char_variable = (byte) temperature;
+    return char_variable;
+  }
 }
-void displayTemperature()
+void displayTemperature(byte bTemp)
 {
+  int startingIndex=0;
+  String wholeByte=String(bTemp, BIN);
+  if(wholeByte.length() == 8) //will only have a length of 8 when # is negative 
+  { 
+    startingIndex=1; //take off the MSB
+  }
+  else
+  {
+    for(int i=0; i<(7-wholeByte.length()); i++)
+    {
+      Serial.print("0");
+    }
+  }
+  for(int i = startingIndex; i<wholeByte.length(); i++)
+  {
+    Serial.print(wholeByte.charAt(i));
+  }
+  Serial.println();
+  
+  
 }
 /**
  * This function reads in the analog input and converts this input
