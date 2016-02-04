@@ -13,29 +13,84 @@ void setup()
   }
   pinMode(A0, INPUT); //configure temp sensor input
   pinMode (buttonPin, INPUT);
-  Serial.begin(9600); //for testing
+  Serial.begin(9600); //FOR TESTING
 }
-
 void loop() 
 {
-  temperature=readTempSensor();
-  //TEST!
-  Serial.print("TEMPRATURE = ");
-  Serial.print(temperature);
-  Serial.print("*C");
-  Serial.println();
-  delay(1000);
+  //temperature=readTempSensor();
+  int temperature= generateTempTest();
+  displayTempTest(temperature);
+  byte test=intToByte(temperature);
+  displayTemperature(test);
 
 }
-void intToBinary(int temperature)
+/**
+ * This function converts the integer temp to a byte
+ */
+byte intToByte(int temperature)
 {
+  if(temperature <= 63 || temperature >= -64) //possible range of values the the 7 LEDs can display
+  {
+    byte char_variable = (byte) temperature;
+    return char_variable;
+  }
 }
-void displayTemperature()
+void displayTemperature(byte bTemp)
 {
+  int startingIndex=0;
+  String wholeByte=String(bTemp, BIN);
+  if(wholeByte.length() == 8) //will only have a length of 8 when # is negative 
+  { 
+    startingIndex=1; //take off the MSB
+  }
+  else
+  {
+    for(int i=0; i<(7-wholeByte.length()); i++)
+    {
+      Serial.print("0");
+    }
+  }
+  for(int i = startingIndex; i<wholeByte.length(); i++)
+  {
+    Serial.print(wholeByte.charAt(i));
+  }
+  Serial.println();
+  
+  
 }
+/**
+ * This function reads in the analog input and converts this input
+ * to a temperature (in degrees celsius) by using this ADC formula:
+ * temperature = (reference voltage/resolution) * (analog voltage measured) * 100
+ * temperature = (analog voltage measured) * 100 * (5.00 V/1024)
+ * temperature = (analog voltage measured) * 0.48828125
+ */
 int readTempSensor()
 {
-  int temperature = analogRead(tempPin);
+  int temperature = analogRead(tempPin); //casting input to integer
   temperature = temperature * 0.48828125;
   return temperature;
+}
+/**
+ * This function displays the temperature (in degrees C) to the serial monitor. 
+ * This function is for TESTING PURPOSES ONLY
+ */
+void displayTempTest(int temperature)
+{
+  Serial.print("Integer Temperature = "); //prints out the temperature to the serial prompt
+  Serial.print(temperature);
+  Serial.println("*C");
+  delay(500); //delays 1/2 a second
+}
+/**
+ * This function prompts a user to enter temperature values.
+ */
+int generateTempTest()
+{
+  Serial.print("enter temp in degrees C: ");
+  while (Serial.available() <= 0){} //get the number of bytes available for reading from the serial port
+  int incomingTemp = Serial.readString().toInt(); // read the incoming string from the user and converts it an integer
+  Serial.println(); 
+  return incomingTemp;
+  
 }
