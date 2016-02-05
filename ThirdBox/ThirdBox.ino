@@ -26,8 +26,8 @@ void loop()
   temperature=readTempSensor();
   if(pc)
   {
-    if(unpluggedSensor){Serial.println("unplugged");}
-    else{sendData(temperature);}
+    short temp = unpluggedSensor ? 1000 : temperature; //send 1000 to PC if temperature sensor becomes unplugged
+    sendData(temp);
   }
   else if (!unpluggedSensor){storeTempData(temperature);}
   else{errorDisplay();} //blink LEDS if error
@@ -120,6 +120,8 @@ int readTempSensor()
       digitalWrite(LEDPins[i], mode);
     }
  }
+
+ 
  /**
  * This function prompts a user to enter temperature values, so that this program can be debugged
  * without having a temperature sensor
