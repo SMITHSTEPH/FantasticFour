@@ -21,7 +21,7 @@ void loop()
 {
   //temperature=readTempSensor();
   int temperature= generateTempTest();
-  FastTempDisplay(temperature);
+  fastTempDisplay(temperature);
   //displayTempTest(temperature);
   //String test=intToBitString(temperature);
   //Serial.println(test);
@@ -83,13 +83,45 @@ int generateTempTest()
   Serial.println(); 
   return incomingTemp;
  }
- void FastTempDisplay(int temp)
+ /**
+  * This functin lights up the LED display quickly
+  */
+ void fastTempDisplay(int temp)
  {
-  byte test = 0x11;
-  Serial.println(test,BIN);
-    Serial.println(0x01|((byte)temp), BIN);
-    //digitalWrite(LEDPins[5], 0x01|((byte)temp));
-    digitalWrite(LEDPins[6], 0x01&((byte)temp));
-    delay(5000);
-     digitalWrite(LEDPins[6], 0x00 & ((byte)temp));
+    int j=6;
+    for(int i=0; i<LEDS_NUM; i++)
+    {
+      digitalWrite(LEDPins[j], (0x01<<i)&((byte)temp)); //better way to do this
+      j--;
+    }
+
+    /*digitalWrite(LEDPins[6], 0x01&((byte)temp)); //hard coded values
+    digitalWrite(LEDPins[5], 0x02&((byte)temp));
+    digitalWrite(LEDPins[4], 0x04&((byte)temp));
+    digitalWrite(LEDPins[3], 0x08&((byte)temp));
+    digitalWrite(LEDPins[2], 0x10&((byte)temp));
+    digitalWrite(LEDPins[1], 0x20&((byte)temp));
+    digitalWrite(LEDPins[0], 0x40&((byte)temp));*/
+    //digitalWrite(LEDPins[6], 0x00 & ((byte)temp)); //TEST --> turning off  built in LED
+ }
+ /**
+  * function flashes LEDS on and off
+  */
+ void errorDisplay()
+ {
+   writeAllLEDS(0);
+   delay(100);
+   writeAllLEDS(1);
+   delay(100);
+ }
+ 
+ /**
+  * this function turns off all of the LEDS after the user lets go of the button 
+  */
+ void writeAllLEDS(int mode)
+ {
+    for(int i = 0; i < LEDS_NUM; i++)
+    {
+      digitalWrite(LEDPins[i], mode);
+    }
  }
