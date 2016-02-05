@@ -15,7 +15,7 @@ const short buttonPin=2; //don't worry about this button yet
 const int tempPin=0; //(analog) connected to A0
 //globals
 short temperature=0;
-bool pc = false;
+bool pc = true;
 QueueList <short> queue;
 
 //later add wifi pins
@@ -25,12 +25,18 @@ void setup()
   pinMode(A0, INPUT); //configure temp sensor input
   pinMode (buttonPin, INPUT);
   Serial.begin(9600); //for serial communication with PC
+  attachInterrupt(digitalPinToInterrupt(buttonPin), fastTempDisplay, LOW); //display temp when the button is pressed
+  attachInterrupt(digitalPinToInterrupt(buttonPin), clearLEDS, HIGH); //turn off all LEDS when button is released
 }
 void loop() 
 { 
   temperature=readTempSensor();
   if(pc){sendData(temperature);}
   else{storeTempData(temperature);}
+}
+void clearLEDS()
+{
+  writeAllLEDS(0);
 }
 /**
  * ARMOND & JOE
@@ -47,7 +53,7 @@ void serialEvent()
   short pcData = Serial.readString().toInt();
   Serial.println("interrupt data is: " + String(pcData, DEC)); //for testing
   if(pcData==0){pc=true;}
-  else if(pcData==1){fastTempDisplay(temperature);}
+  else if(pcData==1){fastTempDisplay();}
   else if(pcData==2){writeAllLEDS(0);}
   else if(pcData==3){pc=false;}
 }
@@ -68,7 +74,7 @@ void storeTempData(short temp)
   //need to figure out how to effectively store the data
   time = millis(); 
   //this does not handle the rollover
-  if(time>=300000 || timeOverflow){queue.pop();} //remove one node for every node added
+  if(time>=300000){queue.pop();} //remove one node for every node added
   queue.push(temp);
 }
 /**
@@ -87,12 +93,12 @@ int readTempSensor()
  /**
   * This functin lights up the LED display quickly
   */
- void fastTempDisplay(short temp)
+ void fastTempDisplay()
  {
     int j=6;
     for(int i=0; i<LEDS_NUM; i++)
     {
-      digitalWrite(LEDPins[j], (0x01<<i)&((byte)temp)); //better way to do this
+      digitalWrite(LEDPins[j], (0x01<<i)&((byte)temperature)); //better way to do this
       j--;
     }
  }
@@ -110,7 +116,7 @@ int readTempSensor()
  /**
   * this function turns off all of the LEDS after the user lets go of the button 
   */
- void writeAllLEDS(int mode)
+ void writeAllLEDS(bool mode)
  {
     for(int i = 0; i < LEDS_NUM; i++)
     {
