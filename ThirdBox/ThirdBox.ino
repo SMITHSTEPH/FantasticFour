@@ -1,10 +1,11 @@
 
-short LEDPins[] = {5,6,8,9,11,12,13}; //need to have 7 LEDs
+const short LEDPins[] = {5,6,8,9,11,12,13}; //need to have 7 LEDs
 const short LEDS_NUM =7;
-int tempPin=0; //(analog) connected to A0
-short buttonPin=2; //don't worry about this button yet
-//later add wifi pins
+const short buttonPin=2; //don't worry about this button yet
+const int tempPin=0; //(analog) connected to A0
 int temperature=0;
+
+//later add wifi pins
 void setup() 
 {
   for(int i=0; i<LEDS_NUM; i++) //configure LEDs
@@ -13,19 +14,21 @@ void setup()
   }
   pinMode(A0, INPUT); //configure temp sensor input
   pinMode (buttonPin, INPUT);
+  
   Serial.begin(9600); //FOR TESTING
 }
 void loop() 
 {
   //temperature=readTempSensor();
   int temperature= generateTempTest();
-  displayTempTest(temperature);
-  String test=intToBitString(temperature);
-  displayTemperature(test);
-
+  FastTempDisplay(temperature);
+  //displayTempTest(temperature);
+  //String test=intToBitString(temperature);
+  //Serial.println(test);
 }
 /**
- * This function converts the integer temp to a byte
+ * This function converts the integer temperature into a bit String. 
+ * -- if the third box is too slow revise this function 
  */
 String intToBitString(int temperature)
 {
@@ -37,40 +40,12 @@ String intToBitString(int temperature)
     if(wholeByte.length()==8){return wholeByte.substring(1, 8);} //return the last 7 bits
     else
     {
-      Serial.println(7-wholeByte.length());
-      for(int i = 0; i<= (7-wholeByte.length()); i++)
-      {
-        Serial.println(wholeByte);
-        wholeByte= "0" + wholeByte; //adding the extras 0s
-        
-      }
+      int newLength=7-wholeByte.length();
+      for(int i = 0; i < newLength; i++){wholeByte= "0" + wholeByte;} //adding the extras 0s
       return wholeByte;
     }
   }
   else{return "error";} //trying to display a temp val it can't
-}
-void displayTemperature(String bTemp)
-{
-  /*int startingIndex=0;
-  String wholeByte=String(bTemp, BIN);
-  if(wholeByte.length() == 8) //will only have a length of 8 when # is negative 
-  { 
-    startingIndex=1; //take off the MSB
-  }
-  else
-  {
-    for(int i=0; i<(7-wholeByte.length()); i++)
-    {
-      Serial.print("0");
-    }
-  }
-  for(int i = startingIndex; i<wholeByte.length(); i++)
-  {
-    Serial.print(wholeByte.charAt(i));
-  }
-  Serial.println();*/
-  Serial.println(bTemp);
-  
 }
 /**
  * This function reads in the analog input and converts this input
@@ -94,10 +69,11 @@ void displayTempTest(int temperature)
   Serial.print("Integer Temperature = "); //prints out the temperature to the serial prompt
   Serial.print(temperature);
   Serial.println("*C");
-  delay(500); //delays 1/2 a second
+  //delay(500);
 }
 /**
- * This function prompts a user to enter temperature values.
+ * This function prompts a user to enter temperature values, so that this program can be debugged
+ * without having a temperature sensor
  */
 int generateTempTest()
 {
@@ -106,5 +82,14 @@ int generateTempTest()
   int incomingTemp = Serial.readString().toInt(); // read the incoming string from the user and converts it an integer
   Serial.println(); 
   return incomingTemp;
-  
-}
+ }
+ void FastTempDisplay(int temp)
+ {
+  byte test = 0x11;
+  Serial.println(test,BIN);
+    Serial.println(0x01|((byte)temp), BIN);
+    //digitalWrite(LEDPins[5], 0x01|((byte)temp));
+    digitalWrite(LEDPins[6], 0x01&((byte)temp));
+    delay(5000);
+     digitalWrite(LEDPins[6], 0x00 & ((byte)temp));
+ }
