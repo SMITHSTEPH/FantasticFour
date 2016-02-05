@@ -1,7 +1,12 @@
+
+
 //still needs to accumulate 300 sec worth of data
 //need to have button interrupts
 //need to have serial interrupts
 //need to connect to hardware
+
+#include "QueueList.h"
+
 const short LEDPins[] = {5,6,8,9,11,12,13}; //need to have 7 LEDs
 const short LEDS_NUM =7;
 const short buttonPin=2; //don't worry about this button yet
