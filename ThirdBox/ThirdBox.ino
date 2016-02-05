@@ -1,11 +1,13 @@
-
-
 //still needs to accumulate 300 sec worth of data
 //need to have button interrupts
-//need to have serial interrupts
 //need to connect to hardware
 
 #include "QueueList.h"
+
+unsigned long time;
+unsigned long prevTime;
+unsigned long prevSecCount=0;
+
 
 const short LEDPins[] = {5,6,8,9,11,12,13}; //need to have 7 LEDs
 const short LEDS_NUM =7;
@@ -13,7 +15,8 @@ const short buttonPin=2; //don't worry about this button yet
 const int tempPin=0; //(analog) connected to A0
 //globals
 short temperature=0;
-bool pc = false;  
+bool pc = false;
+QueueList <short> queue;
 
 //later add wifi pins
 void setup() 
@@ -50,7 +53,10 @@ void serialEvent()
 }
 void sendData(short data) //casting to a short b/c this information can be represented in 7 bits
 {
-  //empty queue if not empty
+  if(!queue.isEmpty()) //if the queue is not empty flush the queue
+  {
+    for(int i=0; i<queue.count(); i++){Serial.println(queue.pop());}//sending the temperature
+  }
   Serial.println(data); //sending the data to the PC
 }
 /**
@@ -59,6 +65,11 @@ void sendData(short data) //casting to a short b/c this information can be repre
  */
 void storeTempData(short temp)
 {
+  //need to figure out how to effectively store the data
+  time = millis(); 
+  //this does not handle the rollover
+  if(time>=300000 || timeOverflow){queue.pop();} //remove one node for every node added
+  queue.push(temp);
 }
 /**
  * This function reads in the analog input and converts this input
@@ -127,7 +138,6 @@ void displayTempTest(int temperature)
   Serial.print("Integer Temperature = "); //prints out the temperature to the serial prompt
   Serial.print(temperature);
   Serial.println("*C");
-  //delay(500);
 }
 /**
  * This function converts the integer temperature into a bit String. 
