@@ -1,21 +1,14 @@
-//still needs to accumulate 300 sec worth of data
-//need to have button interrupts
-//need to connect to hardware
-
 #include "QueueList.h"
 
 unsigned long time;
-unsigned long prevTime;
-unsigned long prevSecCount=0;
-
-
 const short LEDPins[] = {5,6,8,9,11,12,13}; //need to have 7 LEDs
 const short LEDS_NUM =7;
 const short buttonPin=2; //don't worry about this button yet
 const int tempPin=0; //(analog) connected to A0
 //globals
 short temperature=0;
-bool pc = true;
+bool pc = true; //change to false later
+bool unpluggedSensor=false;
 QueueList <short> queue;
 
 //later add wifi pins
@@ -31,13 +24,15 @@ void setup()
 void loop() 
 { 
   temperature=readTempSensor();
-  if(pc){sendData(temperature);}
-  else{storeTempData(temperature);}
+  if(pc)
+  {
+    if(unpluggedSensor){Serial.println("unplugged");}
+    else{sendData(temperature);}
+  }
+  else if (!unpluggedSensor){storeTempData(temperature);}
+  else{errorDisplay();} //blink LEDS if error
 }
-void clearLEDS()
-{
-  writeAllLEDS(0);
-}
+void clearLEDS(){writeAllLEDS(0);}
 /**
  * ARMOND & JOE
  * Interrupt triggered function
@@ -86,7 +81,9 @@ void storeTempData(short temp)
  */
 int readTempSensor()
 {
-  int temperature = analogRead(tempPin); //casting input to integer
+  short temperature = analogRead(tempPin); //casting input to integer
+  if(temperature == 0){unpluggedSensor=true;}
+  else if(unpluggedSensor){unpluggedSensor=false;}
   temperature = temperature * 0.48828125;
   return temperature;
 }
