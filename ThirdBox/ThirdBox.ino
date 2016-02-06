@@ -1,17 +1,21 @@
+/**
+ * Add thirdbox code description
+ */
 #include "QueueList.h"
-
-unsigned long time;
+//pins
 const short LEDPins[] = {5,6,8,9,11,12,13}; //need to have 7 LEDs
 const short LEDS_NUM =7;
 const short buttonPin=2; //don't worry about this button yet
 const int tempPin=0; //(analog) connected to A0
 //globals
+unsigned long time;
 short temperature=0;
-bool pc = true; //change to false later
+bool pc = false; //change to false later
 bool unpluggedSensor=false;
 QueueList <short> queue;
 
 //later add wifi pins
+
 void setup() 
 {
   for(int i=0; i<LEDS_NUM; i++) { pinMode(LEDPins[i], OUTPUT);} //configuring LED pins
@@ -109,7 +113,6 @@ int readTempSensor()
    writeAllLEDS(1);
    delay(100);
  }
- 
  /**
   * this function turns off all of the LEDS after the user lets go of the button 
   */
@@ -120,8 +123,6 @@ int readTempSensor()
       digitalWrite(LEDPins[i], mode);
     }
  }
-
- 
  /**
  * This function prompts a user to enter temperature values, so that this program can be debugged
  * without having a temperature sensor
