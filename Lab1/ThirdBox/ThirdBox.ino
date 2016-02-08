@@ -10,7 +10,7 @@ const int tempPin=0; //(analog) connected to A0
 //globals
 unsigned long time;
 short temperature=0;
-bool pc = false; //change to false later
+bool pc = true; //change to false later
 bool unpluggedSensor=false;
 QueueList <short> queue;
 
@@ -35,6 +35,7 @@ void loop()
   }
   else if (!unpluggedSensor){storeTempData(temperature);}
   else{errorDisplay();} //blink LEDS if error
+  delay(500);
 }
 void clearLEDS(){writeAllLEDS(0);}
 /**
@@ -83,7 +84,7 @@ void storeTempData(short temp)
  * temperature = (analog voltage measured) * 100 * (5.00 V/1024)
  * temperature = (analog voltage measured) * 0.48828125
  */
-int readTempSensor()
+short readTempSensor()
 {
   short temperature = analogRead(tempPin); //casting input to integer
   if(temperature == 0){unpluggedSensor=true;}
@@ -118,10 +119,7 @@ int readTempSensor()
   */
  void writeAllLEDS(bool mode)
  {
-    for(int i = 0; i < LEDS_NUM; i++)
-    {
-      digitalWrite(LEDPins[i], mode);
-    }
+    for(int i = 0; i < LEDS_NUM; i++){digitalWrite(LEDPins[i], mode);}
  }
  /**
  * This function prompts a user to enter temperature values, so that this program can be debugged
