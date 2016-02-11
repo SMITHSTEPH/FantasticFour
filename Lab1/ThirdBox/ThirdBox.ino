@@ -10,7 +10,7 @@ const int tempPin=0; //(analog) connected to A0
 //globals
 unsigned long time;
 short temperature=0;
-bool pc = true; //change to false later
+bool pc = false; //change to false later
 bool unpluggedSensor=false;
 QueueList <short> queue;
 
