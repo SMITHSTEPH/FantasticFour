@@ -2,11 +2,14 @@
  * Add thirdbox code description
  */
 #include "QueueList.h"
+#include "OneWire.h"
+#include "DallasTemperature.h"
 //pins
 const short LEDPins[] = {5,6,8,9,11,12,13}; //need to have 7 LEDs
 const short LEDS_NUM =7;
-const short buttonPin=2; //don't worry about this button yet
-const int tempPin=0; //(analog) connected to A0
+const short buttonPin=3; //don't worry about this button yet
+const int tempPin=2; //(digital pin) for ds18b20
+//const int lmdz35Pin=0 //(analog pin A0) for lm35dz pin
 //globals
 unsigned long time;
 short temperature=0;
@@ -14,27 +17,32 @@ bool pc = true; //change to false later
 bool unpluggedSensor=false;
 QueueList <short> queue;
 
-//later add wifi pins
+
+OneWire oneWire(tempPin); //intializing appropriate references to use the ds18b20
+DallasTemperature tempSensor(&oneWire);
 
 void setup() 
 {
   for(int i=0; i<LEDS_NUM; i++) { pinMode(LEDPins[i], OUTPUT);} //configuring LED pins
-  pinMode(A0, INPUT); //configure temp sensor input
+  pinMode(tempPin, INPUT_PULLUP); //configure temp sensor input
   pinMode (buttonPin, INPUT);
   Serial.begin(9600); //for serial communication with PC
   attachInterrupt(digitalPinToInterrupt(buttonPin), fastTempDisplay, LOW); //display temp when the button is pressed
   attachInterrupt(digitalPinToInterrupt(buttonPin), clearLEDS, HIGH); //turn off all LEDS when button is released
+  tempSensor.begin();
+  Serial.println("in setup");
 }
 void loop() 
 { 
-  temperature=readTempSensor();
   if(pc)
-  {
+  { 
+    temperature=(short)readTempSensor();
     short temp = unpluggedSensor ? 1000 : temperature; //send 1000 to PC if temperature sensor becomes unplugged
-    sendData(temp);
+    //sendData(temp);
+    displayTempTest(temp);
   }
   else if (!unpluggedSensor){storeTempData(temperature);}
-  else{errorDisplay();} //blink LEDS if error
+  else{errorDisplay();} //blink LEDS if error*/
   delay(500);
 }
 void clearLEDS(){writeAllLEDS(0);}
@@ -85,13 +93,19 @@ void storeTempData(short temp)
  * temperature = (analog voltage measured) * 100 * (5.00 V/1024)
  * temperature = (analog voltage measured) * 0.48828125
  */
+ /* //LM35DZ
 short readTempSensor()
 {
   short temperature = analogRead(tempPin); //casting input to integer
-  /*if(temperature == 0){unpluggedSensor=true;}
+  if(temperature == 0){unpluggedSensor=true;}
   else if(unpluggedSensor){unpluggedSensor=false;}
-  temperature = temperature * 0.48828125;*/
+  temperature = temperature * 0.48828125;
   return temperature;
+}*/
+float readTempSensor()
+{
+  tempSensor.requestTemperatures(); // Send the command to get temperatures
+  return tempSensor.getTempCByIndex(0);
 }
  /**
   * This functin lights up the LED display quickly
@@ -138,10 +152,10 @@ int generateTempTest()
  * This function displays the temperature (in degrees C) to the serial monitor. 
  * This function is for TESTING PURPOSES ONLY
  */
-void displayTempTest(int temperature)
+void displayTempTest(float temperature)
 {
-  Serial.print("Integer Temperature = "); //prints out the temperature to the serial prompt
-  Serial.print(temperature);
+  Serial.print("Temperature = "); //prints out the temperature to the serial prompt
+  Serial.print(String(temperature));
   Serial.println("*C");
 }
 /**
