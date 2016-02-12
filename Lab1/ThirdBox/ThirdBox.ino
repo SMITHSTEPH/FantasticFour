@@ -10,7 +10,7 @@ const int tempPin=0; //(analog) connected to A0
 //globals
 unsigned long time;
 short temperature=0;
-bool pc = false; //change to false later
+bool pc = true; //change to false later
 bool unpluggedSensor=false;
 QueueList <short> queue;
 
@@ -50,6 +50,7 @@ void clearLEDS(){writeAllLEDS(0);}
  */
 void serialEvent()
 {
+  digitalWrite(13, HIGH);
   short pcData = Serial.readString().toInt();
   Serial.println("interrupt data is: " + String(pcData, DEC)); //for testing
   if(pcData==0){pc=true;}
@@ -87,9 +88,9 @@ void storeTempData(short temp)
 short readTempSensor()
 {
   short temperature = analogRead(tempPin); //casting input to integer
-  if(temperature == 0){unpluggedSensor=true;}
+  /*if(temperature == 0){unpluggedSensor=true;}
   else if(unpluggedSensor){unpluggedSensor=false;}
-  temperature = temperature * 0.48828125;
+  temperature = temperature * 0.48828125;*/
   return temperature;
 }
  /**
