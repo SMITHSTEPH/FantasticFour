@@ -3,6 +3,13 @@
 
 #include <inttypes.h>
 
+#if ARDUINO >= 100
+ #include "Arduino.h"
+#else
+ #include "WProgram.h"
+#endif
+
+
 // you can exclude onewire_search by defining that to 0
 #ifndef ONEWIRE_SEARCH
 #define ONEWIRE_SEARCH 1

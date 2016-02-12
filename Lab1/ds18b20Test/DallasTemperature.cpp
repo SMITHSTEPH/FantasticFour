@@ -6,8 +6,8 @@
 #include "DallasTemperature.h"
 
 extern "C" {
+  
   //#include "WConstants.h"
-   #include "Arduino.h"
 }
 
 DallasTemperature::DallasTemperature(OneWire* _oneWire)

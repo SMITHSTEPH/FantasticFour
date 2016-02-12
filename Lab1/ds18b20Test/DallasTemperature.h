@@ -19,6 +19,13 @@
 #include <inttypes.h>
 #include "OneWire.h"
 
+#if ARDUINO >= 100
+ #include "Arduino.h"
+#else
+ #include "WProgram.h"
+#endif
+
+
 // Model IDs
 #define DS18S20MODEL 0x10
 #define DS18B20MODEL 0x28
