@@ -13,9 +13,11 @@ const int tempPin=2; //(digital pin) for ds18b20
 //globals
 unsigned long time;
 short temperature=0;
-bool pc = true; //change to false later
+bool pc = false; //change to false later
 bool unpluggedSensor=false;
 QueueList <short> queue;
+
+const short testLEDPin=4;
 
 
 OneWire oneWire(tempPin); //intializing appropriate references to use the ds18b20
@@ -26,23 +28,35 @@ void setup()
   for(int i=0; i<LEDS_NUM; i++) { pinMode(LEDPins[i], OUTPUT);} //configuring LED pins
   pinMode(tempPin, INPUT_PULLUP); //configure temp sensor input
   pinMode (buttonPin, INPUT);
-  Serial.begin(9600); //for serial communication with PC
+  Serial.begin(9600); //for serial communication with serial monitor
+  //Serial1.begin(9600); //for serial communication with PC
   attachInterrupt(digitalPinToInterrupt(buttonPin), fastTempDisplay, LOW); //display temp when the button is pressed
   attachInterrupt(digitalPinToInterrupt(buttonPin), clearLEDS, HIGH); //turn off all LEDS when button is released
   tempSensor.begin();
-  Serial.println("in setup");
+  //Serial.println("in setup");
+
+  pinMode (testLEDPin, OUTPUT);
+  digitalWrite(testLEDPin, HIGH);
+
+  //digitalWrite(testLEDPin, HIGH); //for testing
 }
 void loop() 
 { 
+    //digitalWrite(testLEDPin, HIGH); //for testing
+    //temperature=(short)readTempSensor();
+    //short temp = unpluggedSensor ? 1000 : temperature; //send 1000 to PC if temperature sensor becomes unplugged
+    //sendData(10);
+    //delay(500);
+    //displayTempTest(temp);
   if(pc)
   { 
-    temperature=(short)readTempSensor();
-    short temp = unpluggedSensor ? 1000 : temperature; //send 1000 to PC if temperature sensor becomes unplugged
-    //sendData(temp);
-    displayTempTest(temp);
+    //temperature=(short)readTempSensor();
+    //short temp = unpluggedSensor ? 1000 : temperature; //send 1000 to PC if temperature sensor becomes unplugged
+    sendData(10);
+    //displayTempTest(temp);
   }
-  else if (!unpluggedSensor){storeTempData(temperature);}
-  else{errorDisplay();} //blink LEDS if error*/
+  //else if (!unpluggedSensor){storeTempData(temperature);}
+  //else{errorDisplay();} //blink LEDS if error
   delay(500);
 }
 void clearLEDS(){writeAllLEDS(0);}
@@ -56,22 +70,24 @@ void clearLEDS(){writeAllLEDS(0);}
  *  2 == release third box button
  *  3 == PC no longer ready
  */
-void serialEvent()
+void serialEvent() //received data on serial data from the PC
 {
-  digitalWrite(13, HIGH);
-  short pcData = Serial.readString().toInt();
+  /*digitalWrite(testLEDPin, HIGH);
+  //if(digitalRead(13)!=HIGH){digitalWrite(13, HIGH);}
+  int pcData = Serial.parseInt();
+  if(pcData>=0){digitalWrite(testLEDPin, HIGH);}
   Serial.println("interrupt data is: " + String(pcData, DEC)); //for testing
   if(pcData==0){pc=true;}
-  else if(pcData==1){fastTempDisplay();}
-  else if(pcData==2){writeAllLEDS(0);}
-  else if(pcData==3){pc=false;}
+  //else if(pcData==1){fastTempDisplay();}
+  //else if(pcData==2){writeAllLEDS(0);}
+  else if(pcData==3){pc=false;}*/
 }
 void sendData(short data) //casting to a short b/c this information can be represented in 7 bits
 {
-  if(!queue.isEmpty()) //if the queue is not empty flush the queue
+  /*if(!queue.isEmpty()) //if the queue is not empty flush the queue
   {
     for(int i=0; i<queue.count(); i++){Serial.println(queue.pop());}//sending the temperature
-  }
+  }*/
   Serial.println(data); //sending the data to the PC
 }
 /**
