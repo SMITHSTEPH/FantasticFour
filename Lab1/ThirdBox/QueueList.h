@@ -231,3 +231,4 @@ void QueueList<T>::blink () const {
 }
 
 #endif // _QUEUELIST_H
+

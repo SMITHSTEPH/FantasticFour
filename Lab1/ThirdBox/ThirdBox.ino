@@ -32,7 +32,7 @@ void setup()
   //Serial1.begin(9600); //for serial communication with PC
   attachInterrupt(digitalPinToInterrupt(buttonPin), fastTempDisplay, LOW); //display temp when the button is pressed
   attachInterrupt(digitalPinToInterrupt(buttonPin), clearLEDS, HIGH); //turn off all LEDS when button is released
-  tempSensor.begin();
+  //tempSensor.begin();
   //Serial.println("in setup");
 
   pinMode (testLEDPin, OUTPUT);
@@ -48,7 +48,7 @@ void loop()
     //sendData(10);
     //delay(500);
     //displayTempTest(temp);
-  if(pc)
+  /*if(pc)
   { 
     //temperature=(short)readTempSensor();
     //short temp = unpluggedSensor ? 1000 : temperature; //send 1000 to PC if temperature sensor becomes unplugged
@@ -57,7 +57,7 @@ void loop()
   }
   //else if (!unpluggedSensor){storeTempData(temperature);}
   //else{errorDisplay();} //blink LEDS if error
-  delay(500);
+  delay(500);*/
 }
 void clearLEDS(){writeAllLEDS(0);}
 /**
@@ -72,7 +72,7 @@ void clearLEDS(){writeAllLEDS(0);}
  */
 void serialEvent() //received data on serial data from the PC
 {
-  /*digitalWrite(testLEDPin, HIGH);
+  //digitalWrite(testLEDPin, HIGH);
   //if(digitalRead(13)!=HIGH){digitalWrite(13, HIGH);}
   int pcData = Serial.parseInt();
   if(pcData>=0){digitalWrite(testLEDPin, HIGH);}
@@ -80,7 +80,7 @@ void serialEvent() //received data on serial data from the PC
   if(pcData==0){pc=true;}
   //else if(pcData==1){fastTempDisplay();}
   //else if(pcData==2){writeAllLEDS(0);}
-  else if(pcData==3){pc=false;}*/
+  else if(pcData==3){pc=false;}
 }
 void sendData(short data) //casting to a short b/c this information can be represented in 7 bits
 {
@@ -195,3 +195,4 @@ String intToBitString(int temperature)
   }
   else{return "error";} //trying to display a temp val it can't
 }
+

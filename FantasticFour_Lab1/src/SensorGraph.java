@@ -17,12 +17,14 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseListener;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.util.Scanner;
+
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
@@ -30,7 +32,11 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-import java.awt.Component;
+
+//import java.awt.Component;
+
+
+
 
 //CHART LIBRARY IMPORTS
 import org.jfree.chart.ChartFactory;
@@ -42,29 +48,39 @@ import org.jfree.chart.axis.NumberAxis;
 import org.jfree.chart.axis.NumberTickUnit;
 import org.jfree.chart.plot.XYPlot;
 import org.jfree.chart.renderer.xy.XYItemRenderer;
-import org.jfree.chart.axis.NumberAxis;
-import org.jfree.chart.axis.NumberTickUnit;
-import org.jfree.chart.plot.PlotOrientation;
-import org.jfree.data.xy.XYDataset;
+//import org.jfree.chart.axis.NumberAxis;
+//import org.jfree.chart.axis.NumberTickUnit;
+//import org.jfree.chart.plot.PlotOrientation;
+//import org.jfree.data.xy.XYDataset;
+
+
+
 
 //JSERIALCOMM LIBRARY IMPORTS
 import com.fazecast.jSerialComm.SerialPort;
+
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
-import java.io.FileDescriptor;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+
+//import java.io.FileDescriptor;
+//import java.io.IOException;
+//import java.io.InputStream;
+//import java.io.OutputStream;
+
 
 //TEXT MESSAGE IMPORTS
 import com.twilio.sdk.TwilioRestClient;
 import com.twilio.sdk.TwilioRestException;
 import com.twilio.sdk.resource.factory.MessageFactory;
 import com.twilio.sdk.resource.instance.Message;
+
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
+
+
+
 
 //BASIC JAVA LIRBARY IMPORTS
 import java.util.ArrayList;
@@ -73,8 +89,8 @@ import java.util.List;
 //INTERNET CONNECTION LIBRARY IMPORTS
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.UnknownHostException;
-import java.io.IOException;
+//import java.net.UnknownHostException;
+//import java.io.IOException;
 
 public class SensorGraph {
 	public static final String ACCOUNT_SID = "AC2d94e3ab9715a2de6a58fead2c2861fe"; //texting service accound id
@@ -84,26 +100,26 @@ public class SensorGraph {
 	static int x = 0; //counter for chart series
 
 	public static void main(String[] args) {
-		JFrame window = new JFrame(); //Create New JFrame
+		final JFrame window = new JFrame(); //Create New JFrame
 		window.setTitle("Temperature Readings");
 		// window.setSize(900, 900);
 		window.setMinimumSize(new Dimension(1200, 600));
-		window.setExtendedState(window.MAXIMIZED_BOTH);
+		window.setExtendedState(Frame.MAXIMIZED_BOTH);
 		window.setLayout(new BorderLayout());
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
 		
-		JComboBox<String> portList = new JComboBox<String>(); //create a drop-down box and connect button, then place them at the top of the window
-		JButton connectButton = new JButton("Connect"); //button to connect port to program
-		JButton virtualButton = new JButton("LIGHT LEDs"); //virtual button to light LEDs
+		final JComboBox<String> portList = new JComboBox<String>(); //create a drop-down box and connect button, then place them at the top of the window
+		final JButton connectButton = new JButton("Connect"); //button to connect port to program
+		final JButton virtualButton = new JButton("LIGHT LEDs"); //virtual button to light LEDs
 		virtualButton.setOpaque(true); 
 	    virtualButton.setForeground(Color.RED);
 		JLabel enterPhone = new JLabel("10-digit phone Number:");
-		JTextField phoneNumberTextField = new JTextField(20); //field to enter 10 digit phone number in
+		final JTextField phoneNumberTextField = new JTextField(20); //field to enter 10 digit phone number in
 		JLabel upperBound = new JLabel("lower bound:");
-		JTextField upperBoundField = new JTextField(3); //field to enter upper temperature limit
+		final JTextField upperBoundField = new JTextField(3); //field to enter upper temperature limit
 		JLabel lowerBound = new JLabel("upper bound:");
-		JTextField lowerBoundField = new JTextField(3); //field to enter lower temperature limit
+		final JTextField lowerBoundField = new JTextField(3); //field to enter lower temperature limit
 		JPanel topPanel = new JPanel();
 		
 		//add fields, labels, and buttons to topPanel
@@ -120,9 +136,9 @@ public class SensorGraph {
 		//add topPanel to window
 		window.add(topPanel, BorderLayout.NORTH);
 		
-		JPanel bottomPanel = new JPanel(); //panel for real time temperature display
+		final JPanel bottomPanel = new JPanel(); //panel for real time temperature display
 		JLabel realTimeTempLabel = new JLabel("Real Time Temperature:");
-		JLabel realTimeTemp = new JLabel("24 "); //label that gets constantly reset and repainted
+		final JLabel realTimeTemp = new JLabel("24 "); //label that gets constantly reset and repainted
 		JLabel realTimeTempUnits = new JLabel("Degrees Celsius");
 		
 		//add labels to bottom panel
@@ -137,11 +153,16 @@ public class SensorGraph {
 		
 		//add bottomPanel to window
 		window.add(bottomPanel, BorderLayout.SOUTH);
+		
+		
+		
+		
 
 		//populate the drop-down box
 		SerialPort[] portNames = SerialPort.getCommPorts(); //searches for CommPorts on machine
 		SerialPort leftUSBPort = SerialPort.getCommPort("/dev/cu.usbmodem1421"); //specific port on our local machine
 		SerialPort rightUSBPort = SerialPort.getCommPort("/dev/cu.usbmodem1411"); //specific port on our local machine
+		
 		
 		//check to print the ports detected to console
 		for (int i = 0; i < portNames.length; i++) {
@@ -163,9 +184,9 @@ public class SensorGraph {
 /*------------------------------------------------------------------------------------------------
  * 		CREATE GRAPH
  *------------------------------------------------------------------------------------------------*/
-		XYSeries series = new XYSeries("Temperature Readings");
+		final XYSeries series = new XYSeries("Temperature Readings");
 		XYSeriesCollection dataset = new XYSeriesCollection(series);
-		JFreeChart chart = ChartFactory.createXYLineChart("Temperature", "Time (seconds)", "Degrees (C)", dataset);
+		final JFreeChart chart = ChartFactory.createXYLineChart("Temperature", "Time (seconds)", "Degrees (C)", dataset);
 		XYPlot xyPlot = (XYPlot) chart.getPlot();
 		xyPlot.setDomainCrosshairVisible(true);
 		xyPlot.setRangeCrosshairVisible(true);
@@ -176,7 +197,7 @@ public class SensorGraph {
 		domain.setTickUnit(new NumberTickUnit(20.0)); //sets x-axis interval rate
 		domain.setVerticalTickLabels(true);
 		domain.setTickLabelsVisible(false); //hide the domain intervals and tick marks
-		NumberAxis range = (NumberAxis) xyPlot.getRangeAxis();
+		final NumberAxis range = (NumberAxis) xyPlot.getRangeAxis();
 		range.setRange(-25, 75); //sets range of graph (y-axis) 
 		range.setTickUnit(new NumberTickUnit(10)); //sets y-axis interval rate
 		domain.setLabel("Time Elapsed (s)");
@@ -189,8 +210,6 @@ public class SensorGraph {
  *------------------------------------------------------------------------------------------------*/
 	//Connect button listens for click to connect to the port the user selects from dropdown list
 	connectButton.addActionListener(new ActionListener() {
-			int temperatureReading; //temperature read in from Arduino
-			int tempExtremeCount = 0; //count that increments each time out of bounds temperature read in
 			int tempHotCount = 0; //hot temperature out of bounds counter
 			int tempColdCount = 0; //cold temperature out of bounds counter
 			String recipientNumber=""; //default recipient number
@@ -214,6 +233,7 @@ public class SensorGraph {
 					}
 					
 					//attempt to connect to the serial port
+					
 					chosenPort = SerialPort.getCommPort(portList.getSelectedItem().toString());
 					chosenPort.setComPortTimeouts(SerialPort.TIMEOUT_SCANNER, 0, 0);
 					if (chosenPort.openPort()) {
@@ -227,13 +247,17 @@ public class SensorGraph {
 						public void run() {
 							//Try to run the whole program, if no connection to arduino, exception gets thrown
 							try{
+								@SuppressWarnings("resource")
 								Scanner scanner = new Scanner(chosenPort.getInputStream()); //open scanner for input stream from arduino
-								OutputStream output = chosenPort.getOutputStream(); //create output stream to send serialized data back to arduino
+								final OutputStream output = chosenPort.getOutputStream(); //create output stream to send serialized data back to arduino
 								internet= internetCheck(); //call method to check if machine is connected to internet
 								if(internet == true){
-									try {
+									try 
+									{
 										output.write(0); //send signal to arduino that machine is ready
-									} catch (IOException e2) {
+									} 
+									catch (IOException e2) 
+									{
 										e2.printStackTrace();
 									}
 								}
@@ -256,7 +280,6 @@ public class SensorGraph {
 										int temperatureReading = Integer.parseInt(temperatureString); //parses temperatureString to change to integer
 										
 										if (temperatureReading > 63 || temperatureReading < -10) {
-											tempExtremeCount++; //counter of out of bounds temperatures on either limit
 										}
 										//send text if temperature is above upper limit
 										if (temperatureReading > upperRangeInt && temperatureReading != 1000) {
@@ -317,7 +340,6 @@ public class SensorGraph {
 										
 										//VIRTUAL BUTTON LISTENER
 										virtualButton.addMouseListener(new MouseListener(){
-											@Override
 											public void mousePressed(java.awt.event.MouseEvent e) {
 												// sends message to arduino while virtual button is being pressed down
 												try {
@@ -329,7 +351,6 @@ public class SensorGraph {
 												}
 											}
 	
-											@Override
 											public void mouseReleased(java.awt.event.MouseEvent e) {
 												// sends message to arduino when virtual button is released
 												try {
@@ -341,11 +362,8 @@ public class SensorGraph {
 											}
 											
 											//UNUSED IMPLEMENTED METHODS
-											@Override
 											public void mouseClicked(java.awt.event.MouseEvent e) {} //no action on just click
-											@Override
 											public void mouseEntered(java.awt.event.MouseEvent e) {} //no action on mouseEntered
-											@Override
 											public void mouseExited(java.awt.event.MouseEvent e) {} //no action on mouseExited
 	
 										});
@@ -397,6 +415,7 @@ public class SensorGraph {
 	public static void sendTextMessage(int temperature, int textCount, String recipientNumber) {
 		recipientNumber= "+" + recipientNumber; //appends plus sign to number (needed for API)
 		int maxTextCount=15;
+		@SuppressWarnings("unused")
 		String temperatureString = Integer.toString(temperature); //converts the temperature to a string
 		
 		TwilioRestClient client = new TwilioRestClient(ACCOUNT_SID, AUTH_TOKEN);
