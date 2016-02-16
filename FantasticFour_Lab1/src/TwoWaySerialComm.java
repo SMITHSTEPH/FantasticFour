@@ -21,22 +21,33 @@ public class TwoWaySerialComm
 	        {
 	            SerialPort serialPort = (SerialPort) commPort;
 	            serialPort.setSerialPortParams(57600,SerialPort.DATABITS_8,SerialPort.STOPBITS_1,SerialPort.PARITY_NONE);
-	            //InputStream in = serialPort.getInputStream();
-	            OutputStream out = serialPort.getOutputStream();
-	            int c=0;
-	            Scanner sc = new Scanner(System.in);
-	            while(c!=-1)
-	            {
-	            	System.out.print("input: ");
-                	c =  sc.nextInt();
-                	out.write(c);
-                	out.flush();
-                	System.out.println("c is:" +c);
-                	if(c==-1){System.out.println("-1!!!");}
-	            }	
+	            final InputStream in = serialPort.getInputStream();
+	            final OutputStream out = serialPort.getOutputStream();
+	            
+	            
+	            //byte b1 = '1';
+	            //char b2 ='1';
+	            //Scanner sc = new Scanner(System.in);
+	            
+	            //out.write(b1);
+	            //out.flush();
+	            //out.write(b2);
+	            //out.flush();
+	            //System.out.println("output: " + (b1-48));
+	            
+	            short x = 0;
+	            byte upper = (byte) (x >> 8); //Get the upper 8 bits
+	            byte lower = (byte) (x & 0xFF); //Get the lower 8bits
+	            out.write(upper);
+	            //out.flush();
+	            out.write(lower);
+	            out.flush();
+	            if(in.available()>0){System.out.println("read: " + in.read());} //if there is data available read it
+	           ///if(c==-1){System.out.println("-1!!!");}
+	            
                     //
-	            System.out.println("out of while loop");
-	            sc.close();
+	            //System.out.println("out of while loop");
+	            //sc.close();
 	            //(new Thread(new SerialReader(in))).start();
 	            //(new Thread(new SerialWriter(out))).start();
 	        }
@@ -47,9 +58,8 @@ public class TwoWaySerialComm
 	    {
 	        try
 	        {
-	            (new TwoWaySerialComm()).connect("/dev/cu.usbmodem1411"); //RIGHT PORT ARMOND'S MACBOOK AIR
-	            //(new TwoWaySerialComm()).connect("/dev/cu.usbmodem1411"); //RIGHT PORT ARMOND'S MACBOOK AIR
-	            System.out.println("out of function");
+	            (new TwoWaySerialComm()).connect("/dev/cu.usbserial"); //RIGHT PORT ARMOND'S MACBOOK AIR
+	           
 	        }
 	        catch ( Exception e )
 	        {
