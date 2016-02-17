@@ -500,3 +500,4 @@ unsigned short OneWire::crc16(unsigned short *data, unsigned short len)
 #endif
 
 #endif
+
