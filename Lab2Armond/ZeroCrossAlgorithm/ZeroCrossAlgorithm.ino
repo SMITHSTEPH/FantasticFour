@@ -1,22 +1,54 @@
 
-int inTone;
-int prevTone;
+#include "TimerOne.h" //16 bit timer --> should be no timer overflows for this purpose
+//http://playground.arduino.cc/Code/Timer1
+
+/*globals*/
+
+/*for zero-crossing algorithm*/
+short inTone; //tone coming in currently
+short prevTone; //previous tone that came in (need to keep track of in order to decode)
 boolean TMR1_flag;
+/*for arduino*/
+short inPin=0; //signal will come in on this pin -> analog or digital pin?
 
 
-
-void setup() {
-  // put your setup code here, to run once:
-  
-
+void setup() 
+{
+  pinMode(inPin, INPUT); 
+  attachInterrupt(digitalPinToInterrupt(inPin), determineFrequency, CHANGE);
+  Serial.begin(9600); //configure baudrate for serial port
 }
 
-void loop() {
-  // put your main code here, to run repeatedly:
+void loop() 
+{
+  zeroCrossingAlgorithm();
   
-
+}
+/**function will display HDLC packet**/
+void displayPacket(void)
+{
 }
 
+void determineFrequency(void) //part of zero crossing algorithm
+{
+}
+/**function will collect and decode signal**/
+void zeroCrossingAlgorithm(void)
+{
+}
+/**
+ * this function calcutates the CRC
+ * & then determines wether or not the packet transmitted
+ * successfully
+ * 
+ * returns true if there was an error
+ * returns false if no error
+ **/
+bool isPacketError(void)
+{
+}
+
+//might not need this
 void serialEvent() {
   while (Serial.available()) {
 
