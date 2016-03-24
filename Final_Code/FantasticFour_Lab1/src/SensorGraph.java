@@ -17,6 +17,7 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Font;
+import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseListener;
@@ -25,6 +26,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.util.Scanner;
+
 import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
@@ -32,7 +34,9 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+
 import java.awt.Component;
+
 
 //CHART LIBRARY IMPORTS
 import org.jfree.chart.ChartFactory;
@@ -49,16 +53,20 @@ import org.jfree.chart.axis.NumberTickUnit;
 import org.jfree.chart.plot.PlotOrientation;
 import org.jfree.data.xy.XYDataset;
 
+
 //JSERIALCOMM LIBRARY IMPORTS
 import com.fazecast.jSerialComm.SerialPort;
+
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
 import gnu.io.CommPort;
 import gnu.io.CommPortIdentifier;
+
 import java.io.FileDescriptor;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+
 
 //TEXT MESSAGE IMPORTS
 import com.twilio.sdk.TwilioRestClient;
@@ -68,8 +76,10 @@ import com.twilio.sdk.resource.instance.Message;
 
 //import TwoWaySerialComm.SerialWriter;
 
+
 import org.apache.http.NameValuePair;
 import org.apache.http.message.BasicNameValuePair;
+
 
 //BASIC JAVA LIRBARY IMPORTS
 import java.util.ArrayList;
@@ -78,8 +88,8 @@ import java.util.List;
 //INTERNET CONNECTION LIBRARY IMPORTS
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.UnknownHostException;
-import java.io.IOException;
+//import java.net.UnknownHostException;
+//import java.io.IOException;
 
 public class SensorGraph {
 	public static final String ACCOUNT_SID = "AC2d94e3ab9715a2de6a58fead2c2861fe"; //texting service accound id
@@ -93,7 +103,7 @@ public class SensorGraph {
 		window.setTitle("Temperature Readings");
 		// window.setSize(900, 900);
 		window.setMinimumSize(new Dimension(1200, 600));
-		window.setExtendedState(window.MAXIMIZED_BOTH);
+		window.setExtendedState(Frame.MAXIMIZED_BOTH);
 		window.setLayout(new BorderLayout());
 		window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
@@ -262,19 +272,22 @@ public class SensorGraph {
 						public void run() {
 							//Try to run the whole program, if no connection to arduino, exception gets thrown
 							try{
-								Scanner scanner = new Scanner(chosenPort.getInputStream()); //open scanner for input stream from arduino
+								//Scanner scanner = new Scanner(chosenPort.getInputStream()); //open scanner for input stream from arduino
 								OutputStream output = chosenPort.getOutputStream(); //create output stream to send serialized data back to arduino
-
+								//Scanner scanner = new Scanner(chosenPort.getInputStream()); //open scanner for input stream from arduino
+								
 								internet= internetCheck(); //call method to check if machine is connected to internet
 								if(internet == true){
 									try {
 										//SENDING AS INTEGER
-										output.write(0); //send signal to arduino that machine is ready
+										//output.write(1); //send signal to arduino that machine is ready
+										output.write(0);
 										System.out.println("Connected to the Internet");
 										
 									} catch (IOException e2) {
 										e2.printStackTrace();
 									}
+									
 								}
 								else{
 									try {
@@ -286,6 +299,7 @@ public class SensorGraph {
 										e2.printStackTrace();
 									}
 								}
+								//Scanner scanner = new Scanner(chosenPort.getInputStream()); //open scanner for input stream from arduino
 								//VIRTUAL BUTTON LISTENER TESTING -- DELETE FOR FINAL CODE
 								virtualButton.addMouseListener(new MouseListener(){
 									@Override
@@ -294,8 +308,9 @@ public class SensorGraph {
 										try {
 											System.out.println("Button Pressed");
 											//SENDING AS INTEGER
+											//output.write(0); //test
 											output.write(1); //send 1 to arduino for: push third box button 
-											System.out.println("Virtual Button Pressed");
+											//System.out.println("Virtual Button Pressed");
 										} catch (IOException e1) {
 											e1.printStackTrace();
 										}
@@ -324,7 +339,7 @@ public class SensorGraph {
 								});
 								
 								int tempCount = 0; //counter for the number of temperatures read in from arduino
-						
+								Scanner scanner = new Scanner(chosenPort.getInputStream()); 
 								while (scanner.hasNextLine()) {
 									try {
 										String temperatureString = scanner.nextLine(); //reads in temperature as a string from arduino
@@ -393,7 +408,7 @@ public class SensorGraph {
 										window.repaint(); //updates the graph with the newest value
 										tempCount++; //increments total temperature count
 										
-										//VIRTUAL BUTTON LISTENER
+										/*//VIRTUAL BUTTON LISTENER
 										virtualButton.addMouseListener(new MouseListener(){
 											@Override
 											public void mousePressed(java.awt.event.MouseEvent e) {
@@ -428,10 +443,11 @@ public class SensorGraph {
 											@Override
 											public void mouseExited(java.awt.event.MouseEvent e) {} //no action on mouseExited
 	
-										});
+										});*/
 									} 
 									catch (Exception e){}
 								} //END WHILE LOOP
+								scanner.close();
 							}
 							//catch if machine is not properly connected to arduino
 							

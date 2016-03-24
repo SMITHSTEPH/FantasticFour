@@ -5,16 +5,15 @@
 #include "QueueList.h"
 #include "OneWire.h"
 #include "DallasTemperature.h"
-
 //pins
-const short LEDPins[] = {5,6,8,9,11,12,13}; //need to have 7 LEDs
+const short LEDPins[] = {4,5,6,7,8,9, 10}; //need to have 7 LEDs
 const short LEDS_NUM =7;
 const short buttonPin=3; //don't worry about this button yet
 const int tempPin=2; //(digital pin) for ds18b20
 //const int lmdz35Pin=0 //(analog pin A0) for lm35dz pin
 //globals
 short temperature=0;
-bool pc = false; //change to false later
+bool pc = true; //change to false later
 bool unpluggedSensor=false; //FIX THIS!!
 short toggle=0; //for interrupts
 QueueList <short> queue;
@@ -25,8 +24,9 @@ unsigned long last_micros=0;
 unsigned long time=0;
 
 //testing
-//SoftwareSerial testPort(10, 11); //for testing
+//SoftwareSerial testPort(11, 12); //for testing
 const int testLED=4;
+short t=0;
 
 void setup() 
 {
@@ -35,11 +35,15 @@ void setup()
   pinMode (buttonPin, INPUT);
   Serial.begin(9600); //for serial communication with serial monitor
   attachInterrupt(digitalPinToInterrupt(buttonPin), debounceInterrupt, CHANGE); //display temp when the button is pressed
-  //tempSensor.begin();
+  tempSensor.begin();
   
   //testPort.begin(9600);
-  pinMode(testLED, OUTPUT); //test
-}
+  //pinMode(testLED, OUTPUT); //test
+
+
+
+ 
+} 
 void debounceInterrupt()
 {
   if((long)(micros() - last_micros) >= debouncing_time * 1000)
@@ -50,21 +54,24 @@ void debounceInterrupt()
 }
 void buttonInt()
 {
+    
+
   if(toggle==0) //button pressed
   {
+    //writeAllLEDS(HIGH);
     toggle++;
-    //fastTempDisplay();
+    fastTempDisplay();
     
-    Serial.println("high");
-    digitalWrite(testLED, HIGH);
+    //Serial.println("high");
+    //digitalWrite(testLED, HIGH);
   }
   else if(toggle==1)
   {
     toggle--;
-    //writeAllLEDS(0);
+    writeAllLEDS(LOW);
     
-    Serial.println("low");
-    digitalWrite(testLED, LOW);
+    //Serial.println("low");
+    //digitalWrite(testLED, LOW);
   }
 }
 
@@ -82,11 +89,16 @@ void loop()
     else if(data==2){writeAllLEDS(0);}
     else if(data==3){pc=false;}
   }*/
+
+ 
+  temperature=(short)readTempSensor();
+  //Serial.print("temp: ");
+  //Serial.println(temperature);
+  if(temperature == DEVICE_DISCONNECTED){unpluggedSensor=true;}
   if(pc)
   { 
-    //temperature=(short)readTempSensor();
-    //short temp = unpluggedSensor ? 1000 : temperature; //send 1000 to PC if temperature sensor becomes unplugged
-    sendData(10);
+    short temp = unpluggedSensor ? 1000 : temperature; //send 1000 to PC if temperature sensor becomes unplugged
+    sendData(temperature);
   }
   else if (!unpluggedSensor){storeTempData(temperature);} //if not unplugged but can still do stuff
   else{errorDisplay();} //blink LEDS if error
@@ -104,11 +116,13 @@ void loop()
  */
 void serialEvent() //received data on serial data from the PC
 {
+  
   int pcData = Serial.read();
   if(pcData==0){pc=true;}
   else if(pcData==1){fastTempDisplay();}
   else if(pcData==2){writeAllLEDS(0);}
   else if(pcData==3){pc=false;}
+  Serial.flush();
 }
 void sendData(short data) //casting to a short b/c this information can be represented in 7 bits
 {
@@ -150,7 +164,6 @@ float readTempSensor()
 {
   tempSensor.requestTemperatures(); // Send the command to get temperatures
   return tempSensor.getTempCByIndex(0);
-  //need to determine if tempsensor is unplugged
 }
  /**
   * This functin lights up the LED display quickly
