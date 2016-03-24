@@ -17,6 +17,8 @@ void setup()
   pinMode(inPin, INPUT); 
   attachInterrupt(digitalPinToInterrupt(inPin), determineFrequency, CHANGE);
   Serial.begin(9600); //configure baudrate for serial port
+  Timer1.initialize(295); //argument is period in microseconds --> 590/2
+  //589 us is > the threshold period
 }
 
 void loop() 
