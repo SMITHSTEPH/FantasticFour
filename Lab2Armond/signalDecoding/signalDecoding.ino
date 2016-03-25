@@ -18,7 +18,7 @@ void setup()
 
 void loop()
 {
-    duration = pulseIn(pin, HIGH);
+    duration = pulseIn(pin, HIGH); //the signal will be high regardless
     if(duration == 0){
         //FINISHED READING SIGNAL
         //SEND 'packet' to PC via Serial Communication
@@ -51,7 +51,7 @@ void sendDecodedPacketToPC(int decodedPacket[], String packetBinaryString){
     
     
     
-    String flag
+    //String flag
 }
 }
 
