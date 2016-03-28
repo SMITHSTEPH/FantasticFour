@@ -14,7 +14,7 @@ String flagSearch = "";
 boolean readingPacket= false;
 String buildPacket="01111110";
 
-String packets[10];
+String packets[1200];
 int packetsCount=0;
 
 void setup()
@@ -24,14 +24,15 @@ void setup()
         ; // wait for serial port to connect. Needed for native USB port only
     }
     //pinMode(pin, INPUT);
+    /*
     String flag = "01111110";
     String address = "1110000011100000111000001110000011100000111000001110000011100000111000001110000011100000111000001110000011100000";
     String control = "0000111101001111";
     String info = "0100100001000101010011000100110001001111001000000101011101001111010100100100110001000100";
     String checksum = "0110011001100110";
-    
+    */
     String binary = flag + address + control + info + checksum + flag;
-    //sendDecodedPacketToPC(binary);
+    sendDecodedPacketToPC(binary);
     computeChecksum(flag);
 }
 
