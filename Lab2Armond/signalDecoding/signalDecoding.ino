@@ -14,7 +14,7 @@ String flagSearch = "";
 boolean readingPacket= false;
 String buildPacket="01111110";
 
-String packets[1200];
+
 int packetsCount=0;
 
 void setup()
@@ -23,17 +23,22 @@ void setup()
     while (!Serial) {
         ; // wait for serial port to connect. Needed for native USB port only
     }
-    //pinMode(pin, INPUT);
-    /*
+    Serial.flush();
+    
+
     String flag = "01111110";
     String address = "1110000011100000111000001110000011100000111000001110000011100000111000001110000011100000111000001110000011100000";
     String control = "0000111101001111";
     String info = "0100100001000101010011000100110001001111001000000101011101001111010100100100110001000100";
     String checksum = "0110011001100110";
-    */
+    
     String binary = flag + address + control + info + checksum + flag;
     sendDecodedPacketToPC(binary);
-    computeChecksum(flag);
+    Serial.println("");
+    String T = "01010100";
+    String testCRC= computeChecksum(T);
+    Serial.println("The Checksum for the Letter T: " + testCRC);
+   
 }
 
 
@@ -123,13 +128,13 @@ void sendDecodedPacketToPC(String packetBinaryString){
     int infoLength= info.length();
     //H = 72; E=69 ; L =76 ; L =76 ; O= ; space= 32; W=87 O=79 R=82 L=76 D=68
 
-    Serial.println("Start Flag: " + startFlag);
-    Serial.println("Address: " + address);
-    Serial.println("Control: " + control);
-    Serial.println("Checksum: " + checksum);
-    Serial.println("Stop Flag: " + stopFlag);
+    //Serial.println("Start Flag: " + startFlag);
+    //Serial.println("Address: " + address);
+    //Serial.println("Control: " + control);
+    //Serial.println("Checksum: " + checksum);
+    //Serial.println("Stop Flag: " + stopFlag);
     Serial.println("");
-    Serial.print("DECODED MESSAGE: ");
+    Serial.println("DECODED MESSAGE: ");
     for(int i=0; i< infoLength; i++){
         int temp = i+1;
         if (temp % 8 == 0){
@@ -191,42 +196,75 @@ int binaryToDecimal(String currentByte){
 }
 
 String computeChecksum(String DATA){
-    //data is a binary string
-    //must be converted into hex
-    //hex values can then perform logic
-    String newCRC;
+
+    Serial.println("Data: " + DATA);
+    boolean doNothing=false;
+    String newCRC="";
     String CRC= "1111111111111111";
     String POLY= "1000010000001000";
     int dataLength = DATA.length();
     int currentPlace= dataLength-1;
     char dataChar= DATA.charAt(currentPlace);
     String dataCharToString= String(dataChar);
-    CRC.substring(1);
-    CRC= dataCharToString+CRC;
+    char bitShaved;
+    
+    //CRC.substring(1);
+    //CRC= dataCharToString+CRC;
 
     for(int j=0; j<dataLength; j++){
         dataChar= DATA.charAt(currentPlace);
         dataCharToString= String(dataChar);
-        CRC.substring(0, 14); //shaves least significant bit off string
-        CRC= dataCharToString+CRC;
-        Serial.println("CRC: " + CRC);
-        for(int i=0; i<16; i++){
-            if(CRC.charAt(i) == (POLY.charAt(i))){
-                  newCRC.concat("0");
-            }
-            else{
-                newCRC.concat("1");
-            }
+        //Serial.println("Current Char: " + dataCharToString);
+        bitShaved = CRC.charAt(15);
+        CRC.substring(1); //shaves least significant bit off string
+        //Serial.println("Shaved CRC: " + CRC);
+        //CRC= dataCharToString+CRC;
+        CRC = "0"+CRC;
+        //Serial.println("Concatenated CRC: " + CRC);
+
+        if(bitShaved == dataChar){
+          doNothing=true;
+          newCRC= CRC;
+        }
+        else{
+          doNothing=false;
+          
+        }
+       
+        if(doNothing == false){
+          for(int i=0; i<16; i++){
+              if(CRC.charAt(i) == (POLY.charAt(i))){
+                    newCRC.concat("0");
+              }
+              else{
+                  newCRC.concat("1");
+              }
+          }
         }
         CRC= newCRC;
-        Serial.println("CRC: " + CRC);
+        //Serial.println("New CRC: " + CRC);
         newCRC="";
         currentPlace--;
     }
 
-
-    Serial.println("FINAL CRC: " + CRC);
-    return CRC;
+    CRC= CRC.substring(0,16);
+    Serial.println("FINAL CRC Before Inversion: " + CRC);
+    char tempC;
+    String finalCRC="";
+    String charString;
+    for(int i=0; i< CRC.length(); i++){
+        tempC= CRC.charAt(i);
+        if(tempC == '0'){
+          tempC = '1';
+        }
+        else{
+          tempC= '0';
+        }
+        charString= String(tempC);
+        finalCRC.concat(tempC);
+    }
+    Serial.println("FINAL CRC After Inversion: " + finalCRC);
+    return finalCRC;
 }
 
 
