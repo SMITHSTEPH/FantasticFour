@@ -1,5 +1,5 @@
 #include <avr/io.h>
-//#include <util/delay.h>
+#include <util/delay.h>
 
 //configure inputs and outputs
 /*global variables*/
@@ -32,10 +32,11 @@ const unsigned short signal1200=207/2; //floor([(16MHz/64) * 1/1200 Hz]-1) --> w
 void setup()
 {
   Serial.begin(19200); //for printing to serial console
-  DDRD |= 1<<PD0; //configure PD0 (tx pin) as output leave the rest as inputs
-  DDRB |= 1<<PB5; //make digitial pin 13 and output
+  DDRD = 1<<PD0; //configure PD0 (tx pin) as output leave the rest as inputs
+  DDRB = 1<<PB2; //make digitial pin 13 and output
+  //DD
   
-  EICRA |= (1<<ISC01 | 1<<ISC00); //setting ISC01 and ISC00 to trigger interrupt on rising edge --> only set ISC00 if want to trigger on pin change
+  EICRA |= (1 << ISC10); //trigger on any change
   EIMSK |= (1 << INT0); // turns on INT0  
 
   //configure 16 bit timer1 (used in main loop)
@@ -49,11 +50,14 @@ void setup()
 
   //configure 8 bit timer0 (used to generate square wave for testing)
   TCCR0A |= (1 << WGM01);   //set the Timer Mode to CTC
-  OCR0A = signal2200;
+  //OCR0A = signal2200;
+  OCR0A = signal1200;
   TIMSK0 |= (1 << OCIE0A);  //set interrupt on compare match
   TCCR0B |= (1 << CS01) | (1 << CS00); //set prescaler to 64 and start the timer
   
-  PORTB |= 1<<PB5; //set PB5 (digital pin 13) high
+  PORTB |= (1<<PB2); //set PB5 (digital pin 13) high
+
+  //_delay_ms(2000);
 
   
   sei(); //enable all global interrupts 
@@ -66,19 +70,23 @@ void loop()
 {
    noChange=(curTone==prevTone);
    change=(curTone!=prevTone);
+
+   //packets+=curTone;
    
    if((noChange && tmr1Flag))
    {
+        stopTimer1();
         startTimer1(bitPeriod); //set TMR1 to 1 bit periods
         tmr1Flag=false;
-        //packets+="1";
+        packets+="1";
    }
    else if(change)
    {
+      stopTimer1();
       prevTone=LOW; //toggle prevTone
       startTimer1(bitPeriod*1.5); //set TMR1 to 1.5 bit periods
       tmr1Flag=false;
-      //packets+="0";
+      packets+="0";
    }
 }
 
@@ -109,15 +117,14 @@ void startTimer1(const unsigned short count)
  */
 ISR(INT0_vect)
 {
-  Serial.println("ISR");
   prevTone=curTone;
   if(tmr2Flag){
     curTone=LOW;
-    packets+="0";
+    //packets+="0";
     } //if period is greater than 1/1700
   else{
     curTone=HIGH;
-    packets+="1";
+    //packets+="1";
   } //otherwise it's a one
   tmr2Flag=false; //restart timer
   stopTimer2();
@@ -136,7 +143,7 @@ ISR(TIMER0_COMPA_vect)
   toggleWave^=1; //xor toggleWave
   //Serial.println(toggleWave);
   
-  PORTB= toggleWave ? PORTB & ~(1<<PB5) : PORTB | (1<<PORTB); //if wave is high clear bit else set bit
+  PORTB= toggleWave ? PORTB & ~(1<<PB2) : PORTB | (1<<PB2); //if wave is high clear bit else set bit
 
   TCCR0B &= ~(1 << CS01); //stop timer
   TCCR0B &= ~(1 << CS00); 
