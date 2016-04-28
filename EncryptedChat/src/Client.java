@@ -8,7 +8,8 @@ import java.io.ObjectOutputStream;
 import java.net.InetAddress;
 //import java.net.ServerSocket;
 import java.net.Socket;
-
+import java.security.GeneralSecurityException;
+import java.security.PrivateKey;
 
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
@@ -27,8 +28,31 @@ public class Client extends JFrame{
 	private String chatServer;
 	private Socket client;
 	
+	Chat client1;
+	Chat clientConnection;
+	
 	public Client(String host){
 		super("Client");
+		
+		//Encryption stuff
+		client1 = new Chat("Armond", "Steph");
+		clientConnection = new Chat("Steph", "Armond");
+		PrivateKey clientConnectionPrivateKey = clientConnection.generateMyKeys();
+		PrivateKey clientPrivateKey = client1.generateMyKeys();
+		
+		try {
+			client1.setDecryptionKey(clientConnectionPrivateKey);
+			clientConnection.setDecryptionKey(clientPrivateKey);
+		} catch (GeneralSecurityException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		
+		
+		
+		
+		//End of Encryption stuff
+		
 		chatServer = host;
 		
 		enterField = new JTextField();
@@ -110,10 +134,12 @@ public class Client extends JFrame{
 	}
 	
 	private void sendData(String message){
+		byte[] encryptedMessage = clientConnection.encrypt(message);
+		System.out.println("Encrypted Message: " + encryptedMessage);
 		try{
-			output.writeObject("CLIENT>>> " + message);
+			output.writeObject("CLIENT>>> " + encryptedMessage);
 			output.flush();
-			displayMessage("\nCLIENT>>> " + message);
+			displayMessage("\nCLIENT>>> " + encryptedMessage);
 		}
 		catch(IOException ioException){
 			displayArea.append("\nError writing object");
@@ -121,6 +147,7 @@ public class Client extends JFrame{
 	}
 	
 	private void displayMessage(final String messageToDisplay){
+		//String 
 		SwingUtilities.invokeLater(
 			new Runnable(){
 				public void run(){
