@@ -5,11 +5,8 @@ import java.io.EOFException;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.net.InetAddress;
-//import java.net.ServerSocket;
+import java.net.ServerSocket;
 import java.net.Socket;
-import java.security.GeneralSecurityException;
-import java.security.PrivateKey;
 
 import javax.swing.JFrame;
 import javax.swing.JScrollPane;
@@ -17,44 +14,18 @@ import javax.swing.JTextArea;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
-public class Client extends JFrame{
-
+public class Server extends JFrame{
 	private static final long serialVersionUID = 1L;
 	private JTextField enterField;
 	private JTextArea displayArea;
 	private ObjectOutputStream output;
 	private ObjectInputStream input;
-	private String message = "";
-	private String chatServer;
-	private Socket client;
+	private ServerSocket server;
+	private Socket connection;
+	private int counter = 1;
 	
-	Chat client1;
-	Chat clientConnection;
-	
-	public Client(String host){
-		super("Client");
-		
-		//Encryption stuff
-		client1 = new Chat("Armond", "Steph");
-		clientConnection = new Chat("Steph", "Armond");
-		PrivateKey clientConnectionPrivateKey = clientConnection.generateMyKeys();
-		PrivateKey clientPrivateKey = client1.generateMyKeys();
-		
-		try {
-			client1.setDecryptionKey(clientConnectionPrivateKey);
-			clientConnection.setDecryptionKey(clientPrivateKey);
-		} catch (GeneralSecurityException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		
-		
-		
-		
-		//End of Encryption stuff
-		
-		chatServer = host;
-		
+	public Server(){
+		super("Messaging Server");
 		enterField = new JTextField();
 		enterField.setEditable(false);
 		enterField.addActionListener(
@@ -63,7 +34,8 @@ public class Client extends JFrame{
 					sendData(event.getActionCommand());
 					enterField.setText("");
 				}
-			}		
+			}
+				
 		);
 		add(enterField, BorderLayout.NORTH);
 		
@@ -71,42 +43,50 @@ public class Client extends JFrame{
 		add(new JScrollPane(displayArea), BorderLayout.CENTER);
 		setSize(300, 150);
 		setVisible(true);
-				
+	
 	}
 	
-	public void runClient(){
+	public void runServer(){
 		try{
-			connectToServer();
-			getStreams();
-			processConnection();
-		}
-		catch(EOFException eofException){
-			displayMessage("\nClient Terminated Connection");
+			server = new ServerSocket(23555, 100);
+			while(true){
+				try{
+					waitForConnection();
+					getStreams();
+					processConnection();
+				}
+				catch(EOFException eofException){
+					displayMessage("\nServer Terminated Connection.");
+				}
+				finally{
+					closeConnection();
+					++counter;
+				}
+			}
 		}
 		catch(IOException ioException){
 			ioException.printStackTrace();
 		}
-		finally{
-			closeConnection();
-		}
 	}
 	
-	private void connectToServer() throws IOException{
-		displayMessage("Attempting connection\n");
-		
-		client = new Socket(InetAddress.getByName(chatServer), 23555);
-		displayMessage("Connected to: " + client.getInetAddress().getHostName());
+	private void waitForConnection() throws IOException{
+		displayMessage("Waiting for connection...\n");
+		connection = server.accept();
+		displayMessage("Connection " + counter + " received from " + connection.getInetAddress().getHostName());
 	}
 	
 	private void getStreams() throws IOException{
-		output = new ObjectOutputStream(client.getOutputStream());
+		output = new ObjectOutputStream(connection.getOutputStream());
 		output.flush();
 		
-		input = new ObjectInputStream(client.getInputStream());
+		input = new ObjectInputStream(connection.getInputStream());
 		displayMessage("\nGot I/O Streams\n");
 	}
 	
 	private void processConnection() throws IOException{
+		String message = "Successful Connection.";
+		sendData(message);
+		
 		setTextFieldEditable(true);
 		
 		do{
@@ -117,16 +97,16 @@ public class Client extends JFrame{
 			catch(ClassNotFoundException classNotFoundException){
 				displayMessage("\nUnknown object type received");
 			}
-		} while(!message.equals("SERVER>>> TERMINATE"));
+		} while(!message.equals("CLIENT>>> TERMINATE"));
 	}
 	private void closeConnection(){
-		displayMessage("\nClosing connection\n");
+		displayMessage("\nTerminating connection\n");
 		setTextFieldEditable(false);
 		
 		try{
 			output.close();
 			input.close();
-			client.close();
+			connection.close();
 		}
 		catch(IOException ioException){
 			ioException.printStackTrace();
@@ -134,12 +114,10 @@ public class Client extends JFrame{
 	}
 	
 	private void sendData(String message){
-		byte[] encryptedMessage = clientConnection.encrypt(message);
-		System.out.println("Encrypted Message: " + encryptedMessage);
 		try{
-			output.writeObject("CLIENT>>> " + encryptedMessage);
+			output.writeObject("SERVER>>> " + message);
 			output.flush();
-			displayMessage("\nCLIENT>>> " + client1.decrypt(encryptedMessage));
+			displayMessage("\nSERVER>>> " + message);
 		}
 		catch(IOException ioException){
 			displayArea.append("\nError writing object");
@@ -147,7 +125,6 @@ public class Client extends JFrame{
 	}
 	
 	private void displayMessage(final String messageToDisplay){
-		System.out.println("message to display: " + messageToDisplay);
 		SwingUtilities.invokeLater(
 			new Runnable(){
 				public void run(){
@@ -166,5 +143,5 @@ public class Client extends JFrame{
 			}
 		);
 	}
-		
 }
+	
