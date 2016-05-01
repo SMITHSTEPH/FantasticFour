@@ -85,12 +85,14 @@ public class Server extends JFrame{
 	
 	private void processConnection() throws IOException{
 		String message = "Successful Connection.";
+		byte[] encryptedMessage;
 		sendData(message);
 		
 		setTextFieldEditable(true);
 		
 		do{
 			try{
+				
 				message = (String) input.readObject();
 				displayMessage("\n" + message);
 			}

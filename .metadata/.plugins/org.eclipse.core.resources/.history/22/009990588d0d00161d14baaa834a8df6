@@ -139,7 +139,7 @@ public class Client extends JFrame{
 		try{
 			output.writeObject("CLIENT>>> " + encryptedMessage);
 			output.flush();
-			displayMessage("\nCLIENT>>> " + client1.decrypt(encryptedMessage));
+			displayMessage("\nCLIENT>>> " + encryptedMessage);
 		}
 		catch(IOException ioException){
 			displayArea.append("\nError writing object");
