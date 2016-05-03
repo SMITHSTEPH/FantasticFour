@@ -3,6 +3,10 @@ import sys
 import Tkinter  as tk
 import ttk as ttk
 from pyaxo import Axolotl
+import subprocess
+import binascii
+import hashlib
+
 
 def toClient():
     global connect_role 
@@ -39,123 +43,186 @@ def processUserText():
     #    processUserCommands(command, params)
     #text_input.delete(0, END)
 
+def connect_window(master):
+	
+	root = tk.Toplevel(master)
+	root.title("Connect")
+	root.grab_set()
+
+	nick_frame=tk.Frame(root, width=20) #chat window frame
+	nick_frame.pack(expand=tk.YES, fill=tk.BOTH)
+	nick_label=tk.Label(nick_frame, text='           My Nick:')
+	nick_label.pack(anchor=tk.N, side=tk.LEFT)
+	nick_input=tk.Entry(nick_frame, width=20)
+	nick_input.pack(anchor=tk.N, side=tk.RIGHT, expand=tk.YES, fill=tk.X)
+	
+	other_nick_frame=tk.Frame(root, width=20) #chat window frame
+	other_nick_frame.pack(expand=tk.YES, fill=tk.BOTH)
+	other_nick_label=tk.Label(other_nick_frame, text="Contact's Nick:")
+	other_nick_label.pack(anchor=tk.N, side=tk.LEFT)
+	other_nick_input=tk.Entry(other_nick_frame, width=20)
+	other_nick_input.pack(anchor=tk.N, side=tk.RIGHT, expand=tk.YES, fill=tk.X)
+
+	user_type_frame=tk.Frame(root, width=20) 
+	user_type_frame.pack(expand=tk.YES, fill=tk.BOTH)
+	
+	client_rb=tk.Radiobutton(user_type_frame, text="client", variable=connect_role, value="client", command=toClient)
+	client_rb.pack(anchor=tk.W, expand=tk.YES, fill=tk.Y)
+	server_rb=tk.Radiobutton(user_type_frame, text="server", variable=connect_role, value="server", command=toSever)
+	server_rb.pack(anchor=tk.W, expand=tk.YES, fill=tk.Y)
+
+	connect_button = tk.Button(root, text="Connect", command=lambda:connect(connect_role))
+	connect_button.pack(expand=tk.YES, fill=tk.BOTH)
+
+
 def add_contact_window(master):
-    root = tk.Toplevel(master)
-    root.title("Add Contact")
-    root.grab_set()
+	press_count=0
+	root = tk.Toplevel(master)
+	root.title("Add Contact")
+	root.grab_set()
+	nick_frame=tk.Frame(root, width=20) #chat window frame
+	nick_frame.pack(expand=tk.YES, fill=tk.BOTH)
+	nick_label=tk.Label(nick_frame, text='           My Nick:')
+	nick_label.pack(anchor=tk.N, side=tk.LEFT)
+	nick_input=tk.Entry(nick_frame, width=20)
+	nick_input.pack(anchor=tk.N, side=tk.RIGHT, expand=tk.YES, fill=tk.X)
 
-    nick_frame=tk.Frame(root, width=20) #chat window frame
-    nick_frame.pack(expand=tk.YES, fill=tk.BOTH)
-    nick_label=tk.Label(nick_frame, text='           My Nick:')
-    nick_label.pack(anchor=tk.N, side=tk.LEFT)
-    nick_input=tk.Entry(nick_frame, width=20)
-    nick_input.pack(anchor=tk.N, side=tk.RIGHT, expand=tk.YES, fill=tk.X)
+	other_nick_frame=tk.Frame(root, width=20) #chat window frame
+	other_nick_frame.pack(expand=tk.YES, fill=tk.BOTH)
+	other_nick_label=tk.Label(other_nick_frame, text="Contact's Nick:")
+	other_nick_label.pack(anchor=tk.N, side=tk.LEFT)
+	other_nick_input=tk.Entry(other_nick_frame, width=20)
+	other_nick_input.pack(anchor=tk.N, side=tk.RIGHT, expand=tk.YES, fill=tk.X)
 
-    other_nick_frame=tk.Frame(root, width=20) #chat window frame
-    other_nick_frame.pack(expand=tk.YES, fill=tk.BOTH)
-    other_nick_label=tk.Label(other_nick_frame, text="Contact's Nick:")
-    other_nick_label.pack(anchor=tk.N, side=tk.LEFT)
-    other_nick_input=tk.Entry(other_nick_frame, width=20)
-    other_nick_input.pack(anchor=tk.N, side=tk.RIGHT, expand=tk.YES, fill=tk.X)
+	password_frame=tk.Frame(root, width=20) #chat window frame
+	password_frame.pack(expand=tk.YES, fill=tk.BOTH)
+	password_label=tk.Label(password_frame, text='  My Password:')
+	password_label.pack(anchor=tk.N, side=tk.LEFT)
+	password_input=tk.Entry(password_frame, width=20, show="*")
+	password_input.pack(anchor=tk.N, side=tk.RIGHT, expand=tk.YES, fill=tk.X)
 
-    password_frame=tk.Frame(root, width=20) #chat window frame
-    password_frame.pack(expand=tk.YES, fill=tk.BOTH)
-    password_label=tk.Label(password_frame, text='  My Password:')
-    password_label.pack(anchor=tk.N, side=tk.LEFT)
-    password_input=tk.Entry(password_frame, width=20)
-    password_input.pack(anchor=tk.N, side=tk.RIGHT, expand=tk.YES, fill=tk.X)
+	keys_button=tk.Button(root, text="Generate My Keys", command=lambda: generate_keys(press_count, nick_keys_input, nick_input, other_nick_input, password_input))
+	keys_button.pack(expand=tk.YES, fill=tk.BOTH)
 
-    keys_button=tk.Button(root, text="Generate My Keys", command=lambda: generate_keys(nick_keys_input, nick_input, other_nick_input, password_input))
-    keys_button.pack(expand=tk.YES, fill=tk.BOTH)
+	nick_keys_frame=tk.Frame(root, width=70)
+	nick_keys_frame.pack(expand=tk.YES, fill=tk.BOTH)
+	nick_keys_label=tk.Label(nick_keys_frame, text='My Keys: ')
+	nick_keys_label.pack(anchor=tk.W, side=tk.TOP)
+	nick_keys_input = tk.Text(nick_keys_frame, width=70, height=10)
+	nick_keys_input.pack(side=tk.LEFT, expand=tk.YES, fill=tk.BOTH)
+	nick_keys_input.config(highlightbackground="grey")
+	nick_keys_input.config(state=tk.DISABLED)
 
-    nick_keys_frame=tk.Frame(root, width=40)
-    nick_keys_frame.pack(expand=tk.YES, fill=tk.BOTH)
-    nick_keys_label=tk.Label(nick_keys_frame, text='My Keys: ')
-    nick_keys_label.pack(anchor=tk.W, side=tk.TOP)
-    nick_keys_input = tk.Text(nick_keys_frame, width=40, height=5)
-    nick_keys_input.pack(side=tk.LEFT, expand=tk.YES, fill=tk.BOTH)
-    nick_keys_input.config(highlightbackground="grey")
-    nick_keys_input.config(state=tk.DISABLED)
+	other_nick_keys_frame=tk.Frame(root, width=40)
+	other_nick_keys_frame.pack(expand=tk.YES, fill=tk.BOTH)
+	other_nick_keys_label=tk.Label(other_nick_keys_frame, text="Contact's Keys: ")
+	other_nick_keys_label.pack(anchor=tk.W, side=tk.TOP)
 
-    other_nick_keys_frame=tk.Frame(root, width=40)
-    other_nick_keys_frame.pack(expand=tk.YES, fill=tk.BOTH)
-    other_nick_keys_label=tk.Label(other_nick_keys_frame, text="Contact's Keys: ")
-    other_nick_keys_label.pack(anchor=tk.W, side=tk.TOP)
+	identity_key_label=tk.Label(other_nick_keys_frame, text='      Identity Key: ')
+	identity_key_label.pack(anchor=tk.N, side=tk.LEFT)
+	identity_key=tk.Entry(other_nick_keys_frame, width=20)
+	identity_key.pack(anchor=tk.N, side=tk.RIGHT, expand=tk.YES, fill=tk.X)
 
-    identity_key_label=tk.Label(other_nick_keys_frame, text='      Identity Key: ')
-    identity_key_label.pack(anchor=tk.N, side=tk.LEFT)
-    identity_key=tk.Entry(other_nick_keys_frame, width=20)
-    identity_key.pack(anchor=tk.N, side=tk.RIGHT, expand=tk.YES, fill=tk.X)
+	rachet_key_frame=tk.Frame(root, width=40)
+	rachet_key_frame.pack(expand=tk.YES, fill=tk.BOTH)
+	rachet_key_label=tk.Label(rachet_key_frame, text='       Rachet Key: ')
+	rachet_key_label.pack(anchor=tk.N, side=tk.LEFT)
+	rachet_key=tk.Entry(rachet_key_frame, width=20)
+	rachet_key.pack(anchor=tk.N, side=tk.RIGHT, expand=tk.YES, fill=tk.X)
 
-    rachet_key_frame=tk.Frame(root, width=40)
-    rachet_key_frame.pack(expand=tk.YES, fill=tk.BOTH)
+	handshake_key_frame=tk.Frame(root, width=40)
+	handshake_key_frame.pack(expand=tk.YES, fill=tk.BOTH)
 
-    rachet_key_label=tk.Label(rachet_key_frame, text='       Rachet Key: ')
-    rachet_key_label.pack(anchor=tk.N, side=tk.LEFT)
-    rachet_key=tk.Entry(rachet_key_frame, width=20)
-    rachet_key.pack(anchor=tk.N, side=tk.RIGHT, expand=tk.YES, fill=tk.X)
+	handshake_key_label=tk.Label(handshake_key_frame, text='Handshake Key: ')
+	handshake_key_label.pack(anchor=tk.N, side=tk.LEFT)
+	handshake_key=tk.Entry(handshake_key_frame, width=20)
+	handshake_key.pack(anchor=tk.N, side=tk.RIGHT, expand=tk.YES, fill=tk.X)
 
-    handshake_key_frame=tk.Frame(root, width=40)
-    handshake_key_frame.pack(expand=tk.YES, fill=tk.BOTH)
+	fingerprint_button=tk.Button(root, text="Verify fingerprint", command=lambda: verify_fingerprint(identity_key, fingerprint_input))
+	fingerprint_button.pack(expand=tk.YES, fill=tk.BOTH)
 
-    handshake_key_label=tk.Label(handshake_key_frame, text='Handshake Key: ')
-    handshake_key_label.pack(anchor=tk.N, side=tk.LEFT)
-    handshake_key=tk.Entry(handshake_key_frame, width=20)
-    handshake_key.pack(anchor=tk.N, side=tk.RIGHT, expand=tk.YES, fill=tk.X)
+	fingerprint_frame=tk.Frame(root, width=40)
+	fingerprint_frame.pack(expand=tk.YES, fill=tk.BOTH)
+	fingerprint_label=tk.Label(fingerprint_frame, text="Contact's fingerprint: ")
+	fingerprint_label.pack(anchor=tk.W, side=tk.TOP)
+	fingerprint_input = tk.Text(fingerprint_frame, width=40, height=1)
+	fingerprint_input.pack(side=tk.LEFT, expand=tk.YES, fill=tk.BOTH)
+	fingerprint_input.config(highlightbackground="grey")
+	fingerprint_input.config(state=tk.DISABLED)
+	
+	warning_label=tk.Label(root, text="If fingerprint is valid add contact\notherwise try again")
+	warning_label.pack(expand=tk.YES, fill=tk.BOTH)
+	keys_button=tk.Button(root, text="Add Contact", command=lambda: add_contact(root, rachet_key, handshake_key, identity_key, other_nick_input))
+	keys_button.pack(expand=tk.YES, fill=tk.BOTH)
 
-    keys_button=tk.Button(root, text="Add Contact", command=lambda: add_contact())
-    keys_button.pack(expand=tk.YES, fill=tk.BOTH)
+def verify_fingerprint(identity_key_texbox, fingerprint_textarea):
+
+	fingerprint_textarea.delete(0, 'end') #delete all of the text from the widget
+	other_identityKey=identity_key_texbox.get()
+	print "identity key:"
+	print other_identityKey
+
+	if(not len(other_identityKey)):
+		fingerprint_textarea.config(state=tk.NORMAL)
+		fingerprint_textarea.insert(tk.END, "all keys need to be specified!")
+		fingerprint_textarea.config(fg="red", state=tk.DISABLED)
+
+	else:
+		fingerprint = hashlib.sha224(other_identityKey).hexdigest().upper()
+		fprint = ''
+		for i in range(0, len(fingerprint), 4):
+			fprint += fingerprint[i:i+2] + ':'
+
+		print fprint[:-1] + '\n'  
+		fingerprint_textarea.config(state=tk.NORMAL)
+		fingerprint_textarea.insert(tk.END, fprint[:-1] + '\n')
+		fingerprint_textarea.config(fg="black", state=tk.DISABLED)
+
+def add_contact(window, ratchet_textbox, handshake_textbox, identity_textbox, other_nick_textbox):
+	OTHER_NICK = other_nick_textbox.get()
+	identity = identity_textbox.get()
+	handshake = handshake_textbox.get()
+	ratchet = ratchet_textbox.get()
+
+	newaxo.initState(OTHER_NICK, binascii.a2b_base64(identity), binascii.a2b_base64(handshake),binascii.a2b_base64(ratchet), verify=False)
+	newaxo.saveState()
+	window.destroy() 
+
+def generate_keys(press_count, text_area, nick_textbox, other_nick_textbox, password_textbox):
+	NICK = nick_textbox.get()
+	OTHER_NICK = other_nick_textbox.get()
+	password = password_textbox.get()
+
+	print "nick: " + NICK
+	print "other nick: " + OTHER_NICK
+	print "password: " + password
+
+	if press_count==0:
+		text_area.delete(0, 'end') #delete all of the text from the widget
+
+	if((not len(NICK)) or (not len(OTHER_NICK)) or (not len(password))):
+		text_area.config(state=tk.NORMAL)
+		text_area.insert(tk.END, "make sure nick, other nick and password entries are filled out!\n\n")
+		text_area.config(fg="red",state=tk.DISABLED)
+
+	else: 
+		global newaxo
+		newaxo = Axolotl(NICK, dbname=OTHER_NICK+'.db', dbpassphrase=password)
+		newaxo.printKeys()
+		identity_key = "identity key: " + binascii.b2a_base64(newaxo.state['DHIs'])
+		fingerprint = hashlib.sha224(newaxo.state['DHIs']).hexdigest().upper() #getting fingerprint
+		fprint = ''
+		for i in range(0, len(fingerprint), 4):
+		    fprint += fingerprint[i:i+2] + ':'
+
+		fingerprint = "fingerprint:" + fprint[:-1] + "\n"
+		rachet_key="rachet_key: " + binascii.b2a_base64(newaxo.state['DHRs'])
+		handshake_key = "handshake key: " + binascii.b2a_base64(newaxo.handshakePKey)
+		text_area.config(state=tk.NORMAL)
+		text_area.insert(tk.END, identity_key+fingerprint+rachet_key+handshake_key)
+		text_area.config(fg="black",state=tk.DISABLED)
 
 
-def generate_keys(text_area, nick_textbox, other_nick_textbox, password_textbox):
-	# newaxo = Axolotl(NICK, dbname=OTHER_NICK+'.db')
-	# newaxo.printKeys()
-	# identity = raw_input('What is the identity key for the other party? ')
-	# ratchet = raw_input('What is the ratchet key for the other party? ')
-	# handshake = raw_input('What is the handshake key for the other party? ')
-	# newaxo.initState(OTHER_NICK, binascii.a2b_base64(identity),
- 	#    	binascii.a2b_base64(handshake),binascii.a2b_base64(ratchet))
-	# newaxo.saveState()
-	print nick_textbox.get()
-	print other_nick_textbox.get()
-	print password_textbox.get()
-
-	identity_key = " identity_key: random1\n"
-	fingerprint = " fingerprint: random2\n"
-	rachet_key = " rachet_key: random3\n"
-	handshake_key= " handshake_key: random4\n"
-	text_area.config(state=tk.NORMAL)
-	text_area.insert(tk.END, identity_key+fingerprint+rachet_key+handshake_key)
-	text_area.config(state=tk.DISABLED)
-    
-def username_options_go(name, window):
-    """Processes the options entered by the user in the
-    server options window.
-
-    """
-    processUserCommands("nick", [name])
-    window.destroy()    
-
-def username_options_window(master):
-    """Launches username options window for setting username."""
-    top = tk.Toplevel(master)
-    top.title("Username options")
-    top.grab_set()
-    tk.Label(top, text="Username:").grid(row=0)
-    name = tk.Entry(top)
-    name.focus_set()
-    name.grid(row=0, column=1)
-    go = tk.Button(top, text="Change", command=lambda:
-                username_options_go(name.get(), top))
-    go.grid(row=1, column=1)   
-    
-def username_options_go(name, window):
-    """Processes the options entered by the user in the
-    server options window.
-
-    """
-    processUserCommands("nick", [name])
-    window.destroy()     
 
 def main():
 	#----------------------------------------------------------------------#
@@ -215,8 +282,7 @@ def main():
 	#menu for user
 	chat_menu = tk.Menu(menubar, tearoff=0)
 	chat_menu.add_command(label="Add Contact", command=lambda: add_contact_window(root))
-	chat_menu.add_command(label="Set Username", command=lambda: username_options_window(root))
-	chat_menu.add_command(label="Connect", command=lambda:connect(connect_role))
+	chat_menu.add_command(label="Connect", command=lambda:connect_window(root))
 	chat_menu.add_command(label="Disconnect", command=lambda:disconnect())
 	chat_menu.add_command(label="Exit", command=lambda: root.destroy())
 	menubar.add_cascade(label="Chat Menu", menu=chat_menu)
