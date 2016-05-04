@@ -51,7 +51,7 @@ TOR_CONTROL_HASHED_PASSWORD = \
 
 def print_bootstrap_lines(line):
     if 'Bootstrapped ' in line:
-        chat_window.insert(tk.END, term.format(line)+'\n')
+        chat_window.insert(tk.END, ' '+term.format(line)+'\n')
           
 def axo(my_name, other_name, dbname, dbpassphrase):
     global a
@@ -111,11 +111,11 @@ def smptest(secret, sock, is_server):
 
     # Check if the secrets match
     if smp.match:
-    	writeToScreen('Secrets Match!')
+    	writeToScreen(' Secrets Match!')
         #chat_window.insert(tk.END, 'Secrets Match!')
         smp_match = True
     else:
-    	writeToScreen('Secrets DO NOT Match!')
+    	writeToScreen(' Secrets DO NOT Match!')
         #chat_window.insert(tk.END, 'Secrets DO NOT Match!')
         smp_match = False
     return smp_match    
@@ -134,7 +134,7 @@ def hiddenService():
             ('HiddenServicePort', '50000 %s:%s' % (HOST, str(PORT))),
             ])
         svc_name = open(hidden_svc_dir + 'hostname', 'r').read().strip()
-        chat_window.insert(tk.END, '\n\n* Created onion server: %s' % svc_name)
+        chat_window.insert(tk.END, '\n\n * Created onion server: %s' % svc_name)
         print ' * Created onion server: %s' % svc_name
     except Exception as e:
         print e
@@ -177,7 +177,7 @@ def connect(window, connect_role, nick_textbox, other_nick_textbox):
 		axo(NICK, OTHER_NICK, dbname=OTHER_NICK+'.db', dbpassphrase="password")
 		tor_process = tor(TOR_SERVER_PORT, TOR_SERVER_CONTROL_PORT, 'tor.server')
 		hs = hiddenService()
-		print 'Waiting for ' + OTHER_NICK + ' to connect...\n'
+		print ' Waiting for ' + OTHER_NICK + ' to connect...\n'
 		
 		chat_window.insert(tk.END, '\nWaiting for ' + OTHER_NICK + ' to connect...\n')
 		Server().start()
@@ -198,7 +198,7 @@ def connect(window, connect_role, nick_textbox, other_nick_textbox):
 		tor_process = tor(TOR_CLIENT_PORT, TOR_CLIENT_CONTROL_PORT, 'tor.client')
 		#print onion_textbox.get()
 		HOST = onion_server
-		message='Connecting to ' + HOST + '...'
+		message=' Connecting to ' + HOST + '...'
 		print message
 		writeToScreen(message)
 		Client().start()
@@ -217,8 +217,14 @@ def connect(window, connect_role, nick_textbox, other_nick_textbox):
 
 def disconnect():
 	print "disconnect"
-	global connection_status
+	global connection_status, NICK, OTHER_NICK
 	connection_status="disconnected"
+	NICK=""
+	OTHER_NICK=""
+	conn.send(a.encrypt("Session is disconnected\n"))
+	writeToScreen("Disconnected..\n")
+	a.saveState()
+	sys.exit()
 	#not done yet
 
 
@@ -229,7 +235,7 @@ def processUserText(message_textbox):
    	chat_window.config(state=tk.NORMAL)
    	if len(NICK):
   		writeToScreen(NICK+": "+ message+"\n")
-  		conn.send(message)
+  		conn.send(a.encrypt(message))
   	else:
   		writeToScreen("SELF: "+ message+"\n")	#if a connection hasn't been made yet	
  	
@@ -450,7 +456,7 @@ class Server (threading.Thread):
         print "accepted!"
         dummy="test" #need this b/c I need to pass in two arguments, I get an error if I just try to pass in conn :(
 
-        writeToScreen('Running SMP...\n')
+        writeToScreen(' Running SMP...\n')
         print SMP_KEY
         secret = a.state['DHIs'] + SMP_KEY + a.state['DHIr'] + a.state['CONVid']
         smp_match = smptest(secret, conn, True)
@@ -462,7 +468,7 @@ class Server (threading.Thread):
         	sys.exit()
         	conn.close()
 
-        writeToScreen("You are now connected with " + OTHER_NICK+'\n')
+        writeToScreen(" You are now connected with " + OTHER_NICK+'\n')
         threading.Thread(target=Runner, args=(conn, dummy)).start()
   
 
@@ -486,7 +492,7 @@ class Client (threading.Thread):
         	print message
         	exit()
 
-        writeToScreen('Running SMP...\n')
+        writeToScreen(' Running SMP...\n')
         secret = a.state['DHIr'] + SMP_KEY + a.state['DHIs'] + a.state['CONVid']
         print SMP_KEY
         smp_match = smptest(secret, conn, False)
@@ -499,7 +505,7 @@ class Client (threading.Thread):
         	conn.close()   	
 
         dummy="test" #need this b/c I need to pass in two arguments, I get an error if I just try to pass in conn :(
-        writeToScreen("You are now connected with " + OTHER_NICK+'\n')
+        writeToScreen(" You are now connected with " + OTHER_NICK+'\n')
         threading.Thread(target=Runner, args=(conn, dummy)).start()
   
 def Runner(conn, dummy):
@@ -507,6 +513,7 @@ def Runner(conn, dummy):
 	while 1:
 		data = netCatch(conn)
 		if len(data):
+			data=a.decrypt(data)
 			print data
 			writeToScreen(data, username=OTHER_NICK)
 
