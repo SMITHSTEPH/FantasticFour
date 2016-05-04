@@ -15,6 +15,7 @@ from contextlib import contextmanager
 import os
 import socks
 from smp import SMP
+import threading
 
 
 
@@ -26,31 +27,32 @@ TOR_CONTROL_PASSWORD        = 'axotor'
 TOR_CONTROL_HASHED_PASSWORD = \
     '16:0DF8A51D5BB7A97160265FEDD732D47AB07FC143446943D92C2C584673'
 
-@contextmanager
-def torcontext():
-    try:
-        s = socks.socksocket()
-        s.set_proxy(socks.SOCKS5, '127.0.0.1', TOR_CLIENT_PORT)
-        yield s
-        s.close()
-    except socks.SOCKS5Error:
-        print ''
-        print 'You need to wait long enough for the Hidden Service'
-        print 'at the server to be established. Try again in a'
-        print 'minute or two.'
+# @contextmanager
+# def torcontext():
+#     try:
+#         s = socks.socksocket()
+#         s.set_proxy(socks.SOCKS5, '127.0.0.1', TOR_CLIENT_PORT)
+#         yield s
+#         s.close()
+#     except socks.SOCKS5Error:
+#     	message='\nYou need to wait long enough for the Hidden Service\nat the server to be established. Try again in a\n'
+#     	writeToScreen(message)
+#         print message
+#         exit()
 
-@contextmanager
-def socketcontext(*args, **kwargs):
-    s = socket.socket(*args, **kwargs)
-    s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
-    yield s
-    s.close()
+# @contextmanager
+# def socketcontext(*args, **kwargs):
+# 	global s
+# 	s = socket.socket(*args, **kwargs)
+# 	s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+# 	s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+# 	yield s
+# 	s.close()
 
 def print_bootstrap_lines(line):
     if 'Bootstrapped ' in line:
-        chat_window.insert(tk.END, term.format(line, term.Color.RED))        
-
+        chat_window.insert(tk.END, term.format(line)+'\n')
+          
 def axo(my_name, other_name, dbname, dbpassphrase):
     global a
     a = Axolotl(my_name, dbname=dbname, dbpassphrase=dbpassphrase, nonthreaded_sql=False)
@@ -121,7 +123,7 @@ def hiddenService():
     HOST = '127.0.0.1'
     hidden_svc_dir = '/Applications/TorBrowser.app/TorBrowser/Tor/tor.hs/'
 
-    chat_window.insert(tk.END, ' * Getting controller')
+    chat_window.insert(tk.END, '\n * Getting controller\n')
     controller = Controller.from_port(address='127.0.0.1', port=TOR_SERVER_CONTROL_PORT)
     try:
         controller.authenticate(password=TOR_CONTROL_PASSWORD),
@@ -130,7 +132,7 @@ def hiddenService():
             ('HiddenServicePort', '50000 %s:%s' % (HOST, str(PORT))),
             ])
         svc_name = open(hidden_svc_dir + 'hostname', 'r').read().strip()
-        chat_window.insert(tk.END, ' * Created onion server: %s' % svc_name)
+        chat_window.insert(tk.END, '\n\n* Created onion server: %s' % svc_name)
         print ' * Created onion server: %s' % svc_name
     except Exception as e:
         print e
@@ -141,84 +143,93 @@ def toClient():
     connect_role = "client"
     print connect_role
     onion_input.config(state=tk.NORMAL)
+    #print onion_input.get()
 
 def toSever():
 	global connect_role
 	connect_role = "server"
 	print connect_role
 	onion_input.config(state=tk.DISABLED)
+	#print onion_input.get()
 
-def connect(window, connect_role, nick_textbox, other_nick_textbox, onion_textbox):
+def connect(window, connect_role, nick_textbox, other_nick_textbox):
 	print "in connect"
 	global connection_status
+	global NICK
+	global OTHER_NICK
+	global HOST
+	global PORT
+
 	connection_status="connected"
 	NICK = nick_textbox.get()
 	OTHER_NICK = other_nick_textbox.get()
 	HOST = '127.0.0.1'
 	PORT=50000
+	onion_server=onion_input.get()
 	window.destroy() 
-	chat_window.config(state=tk.NORMAL)
+	chat_window.config(state=tk.NORMAL) #make normal so I can do all of this shit
 
 	if connect_role == "server":
 		axo(NICK, OTHER_NICK, dbname=OTHER_NICK+'.db', dbpassphrase="password")
 		tor_process = tor(TOR_SERVER_PORT, TOR_SERVER_CONTROL_PORT, 'tor.server')
 		hs = hiddenService()
-		print 'Waiting for ' + OTHER_NICK + ' to connect...'
-		chat_window.insert(tk.END, 'Waiting for ' + OTHER_NICK + ' to connect...')
-		with socketcontext(socket.AF_INET, socket.SOCK_STREAM) as s:
-			s.bind((HOST, PORT))
-			s.listen(1)
-			conn, addr = s.accept()
-			chat_window.insert(tk.END, 'Connected...')
-			print "Connected"
-			chat_window.insert(tk.END, 'Performing per-session SMP authentication...')
-			ans = chat_window.insert(tk.END, 'Enter SMP secret: ')
-			chat_window.insert(tk.END, 'Running SMP protocol...')
-			secret = a.state['DHIs'] + ans + a.state['DHIr'] + a.state['CONVid']
-			smp_match = smptest(secret, conn, True)
-			if not smp_match:
-				a.saveState()
-				sys.exit()
+		print 'Waiting for ' + OTHER_NICK + ' to connect...\n'
+		
+		chat_window.insert(tk.END, '\nWaiting for ' + OTHER_NICK + ' to connect...\n')
+		Server().start()
+		print "After SERVER"
+
+		# 	chat_window.insert(tk.END, 'Performing per-session SMP authentication...')
+		# 	ans = chat_window.insert(tk.END, 'Enter SMP secret: ')
+		# 	chat_window.insert(tk.END, 'Running SMP protocol...')
+		# 	secret = a.state['DHIs'] + ans + a.state['DHIr'] + a.state['CONVid']
+		# 	smp_match = smptest(secret, conn, True)
+		# 	if not smp_match:
+		# 		a.saveState()
+		# 		sys.exit()
 
 	elif connect_role == "client":
+		print onion_server
 		axo(NICK, OTHER_NICK, dbname=OTHER_NICK+'.db', dbpassphrase="password")
 		tor_process = tor(TOR_CLIENT_PORT, TOR_CLIENT_CONTROL_PORT, 'tor.client')
-		HOST = onion_textbox.get()
-		print 'Connecting to ' + HOST + '...'
-		with torcontext() as s:
-			s.connect((HOST, PORT))
-			print 'Connected...'
-			print 'Performing per-session SMP authentication...'
-			ans = raw_input('Enter SMP secret: ')
-			print 'Running SMP protocol...'
-			secret = a.state['DHIr'] + ans + a.state['DHIs'] + a.state['CONVid']
-			smp_match = smptest(secret, s, False)
-			if not smp_match:
-				print 'Exiting...'
-				a.saveState()
-				sys.exit()
-            #chatThread(s, smp_match)		
+		#print onion_textbox.get()
+		HOST = onion_server
+		message='Connecting to ' + HOST + '...'
+		print message
+		writeToScreen(message)
+		Client().start()
 
+		#print 'Connected...'
+		#print 'Performing per-session SMP authentication...'
+		#ans = raw_input('Enter SMP secret: ')
+		#print 'Running SMP protocol...'
+		#secret = a.state['DHIr'] + ans + a.state['DHIs'] + a.state['CONVid']
+		#smp_match = smptest(secret, s, False)
+		#if not smp_match:
+		#	print 'Exiting...'
+		#	a.saveState()
+		#	sys.exit()
+        #chatThread(s, smp_match)		
 
 def disconnect():
 	print "disconnect"
 	global connection_status
 	connection_status="disconnected"
+	#not done yet
 
 
-def processUserText():
-   print "process text"
-    #data = text_input.get()
-    #if data[0] != "/":  # is not a command
-    #    placeText(data)
-    #else:
-    #    if data.find(" ") == -1:
-    #        command = data[1:]
-    #    else:
-    #        command = data[1:data.find(" ")]
-    #    params = data[data.find(" ") + 1:].split(" ")
-    #    processUserCommands(command, params)
-    #text_input.delete(0, END)
+def processUserText(message_textbox):
+	print "process text"
+   	message=message_textbox.get("1.0",tk.END)
+   	message_textbox.delete("1.0", tk.END)
+   	chat_window.config(state=tk.NORMAL)
+   	if len(NICK):
+  		writeToScreen(NICK+": "+ message+"\n")
+  		conn.send(message)
+  	else:
+  		writeToScreen("SELF: "+ message+"\n")	#if a connection hasn't been made yet	
+ 	
+
 
 def connect_window(master):
 	root = tk.Toplevel(master)
@@ -256,7 +267,7 @@ def connect_window(master):
 	onion_input.pack(anchor=tk.N, side=tk.RIGHT, expand=tk.YES, fill=tk.X)
 	onion_input.config(state=tk.DISABLED)
 
-	connect_button = tk.Button(root, text="Connect", command=lambda: connect(root, connect_role, nick_input, other_nick_input, onion_input))
+	connect_button = tk.Button(root, text="Connect", command=lambda: connect(root, connect_role, nick_input, other_nick_input))
 	connect_button.pack(expand=tk.YES, fill=tk.BOTH)
 
 
@@ -382,7 +393,7 @@ def generate_keys(press_count, text_area, nick_textbox, other_nick_textbox, pass
 	print "password: " + password
 
 	if press_count==0:
-		text_area.delete(0, 'end') #delete all of the text from the widget
+		text_area.delete(0, tk.END) #delete all of the text from the widget
 
 	if((not len(NICK)) or (not len(OTHER_NICK)) or (not len(password))):
 		text_area.config(state=tk.NORMAL)
@@ -406,9 +417,89 @@ def generate_keys(press_count, text_area, nick_textbox, other_nick_textbox, pass
 		text_area.insert(tk.END, identity_key+fingerprint+rachet_key+handshake_key)
 		text_area.config(fg="black",state=tk.DISABLED)
 
+class Server (threading.Thread):
+    "A class for a Server instance."""
+    def __init__(self):
+        threading.Thread.__init__(self)
+    
+    def run(self):
+    	#creating a socket
+    	global conn
+        s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        s.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+        s.bind((HOST, PORT))
 
+        print "listening!"
+        s.listen(1)
+        global conn #server socket
+        conn, addr = s.accept()
+        print "accepted!"
+        dummy="test" #need this b/c I need to pass in two arguments, I get an error if I just try to pass in conn :(
+        writeToScreen("You are now connected with " + OTHER_NICK+'\n')
+        #chat_window.config(state=tk.NORMAL)
+        #chat_window.insert(tk.END, "You are now connected with " + OTHER_NICK+'\n')
 
+        threading.Thread(target=Runner, args=(conn, dummy)).start()
+  
+
+class Client (threading.Thread):
+    """A class for a Client instance."""
+    def __init__(self):
+        threading.Thread.__init__(self)
+        print "in client constructor"
+           
+    def run(self):
+    	print "in run"
+    	try:
+    		global conn
+        	conn = socks.socksocket()
+        	conn.set_proxy(socks.SOCKS5, '127.0.0.1', TOR_CLIENT_PORT)
+        	conn.connect((HOST, PORT))
+
+        except socks.SOCKS5Error:
+    		message='\nYou need to wait long enough for the Hidden Service\nat the server to be established. Try again in a\n'
+    		writeToScreen(message)
+        	print message
+        	exit()
+
+        dummy="test" #need this b/c I need to pass in two arguments, I get an error if I just try to pass in conn :(
+        writeToScreen("You are now connected with " + OTHER_NICK+'\n')
+    	#chat_window.config(state=tk.NORMAL)
+        #chat_window.insert(tk.END, "You are now connected with " + OTHER_NICK)
+        threading.Thread(target=Runner, args=(conn, dummy)).start()
+  
+def Runner(conn, dummy):
+	print dummy
+	while 1:
+		data = netCatch(conn)
+		if len(data):
+			print data
+			writeToScreen(data, username=OTHER_NICK)
+
+def netCatch(conn):
+    """Receive and return the message through open socket conn, decrypting
+    using key secret. If the message length begins with - instead of a number,
+    process as a flag and return 1.
+	"""
+    data = conn.recv(1024) 
+    return data        
+
+def writeToScreen(text, username=""):
+    """Places text to main text body in format "username: text"."""
+    chat_window.config(state=tk.NORMAL)
+    chat_window.insert(tk.END, '\n')
+    if len(username):
+    	chat_window.insert(tk.END, username + ": ")
+
+    chat_window.insert(tk.END, text)
+    chat_window.yview(tk.END)
+    chat_window.config(state=tk.DISABLED)
+
+    		               
 def main():
+	global NICK
+	NICK=""
 	#----------------------------------------------------------------------#
 	# Create main window and two frames to go inside it                    #
 	# The top frame holds the textarea, the bottom frame holds the         # 
@@ -450,7 +541,7 @@ def main():
 	text_input.pack(side=tk.LEFT, expand=tk.YES, fill=tk.BOTH)
 	text_input.config(highlightbackground="black")
 
-	send_button = ttk.Button(bottom_frame, style="send.TButton",text="\n\nsend\n\n", command=processUserText)
+	send_button = ttk.Button(bottom_frame, style="send.TButton",text="\n\nsend\n\n", command=lambda: processUserText(text_input))
 	send_button.pack()
 	send_button_style = ttk.Style()
 	send_button_style.configure('send.TButton', foreground='black', fontweight='bold', borderwidth=2, bordercolor='black', height=5)
@@ -473,17 +564,6 @@ def main():
 	menubar.add_cascade(label="Chat Menu", menu=chat_menu)
 	root.config(menu=menubar)
 
-
-	
-
-
-	#things to add later
-	#connect_button = Button(botton_frame, textvariable=connection_status, command=connects(clientType))
-	#connecter.pack(side=BOTTOM, expand=YES, fill=BOTH)
-	#client_rb=Radiobutton(bottom_frame, text="client", variable=connect_role, value="client", command=toClient)
-	#client_rb.pack(anchor=E, expand=YES, fill=BOTH)
-	#server_rb=Radiobutton(bottom_frame, text="server", variable=connect_role, value="server", command=toSever)
-	#server_rb.pack(anchor=E, expand=YES, fill=BOTH)
 	root.mainloop() #render GUI
 
 if __name__ == '__main__':
