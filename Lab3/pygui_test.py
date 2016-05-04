@@ -111,10 +111,12 @@ def smptest(secret, sock, is_server):
 
     # Check if the secrets match
     if smp.match:
-        chat_window.insert(tk.END, 'Secrets Match!')
+    	writeToScreen('Secrets Match!')
+        #chat_window.insert(tk.END, 'Secrets Match!')
         smp_match = True
     else:
-        chat_window.insert(tk.END, 'Secrets DO NOT Match!')
+    	writeToScreen('Secrets DO NOT Match!')
+        #chat_window.insert(tk.END, 'Secrets DO NOT Match!')
         smp_match = False
     return smp_match    
 
@@ -159,6 +161,7 @@ def connect(window, connect_role, nick_textbox, other_nick_textbox):
 	global OTHER_NICK
 	global HOST
 	global PORT
+	global SMP_KEY
 
 	connection_status="connected"
 	NICK = nick_textbox.get()
@@ -166,6 +169,7 @@ def connect(window, connect_role, nick_textbox, other_nick_textbox):
 	HOST = '127.0.0.1'
 	PORT=50000
 	onion_server=onion_input.get()
+	SMP_KEY=SMP_input.get()
 	window.destroy() 
 	chat_window.config(state=tk.NORMAL) #make normal so I can do all of this shit
 
@@ -266,6 +270,15 @@ def connect_window(master):
 	onion_input=tk.Entry(onion_frame, width=20)
 	onion_input.pack(anchor=tk.N, side=tk.RIGHT, expand=tk.YES, fill=tk.X)
 	onion_input.config(state=tk.DISABLED)
+
+	SMP_frame=tk.Frame(root, width=20) #chat window frame
+	SMP_frame.pack(expand=tk.YES, fill=tk.BOTH)
+	SMP_label=tk.Label(SMP_frame, text="SMP key:")
+	SMP_label.pack(anchor=tk.N, side=tk.LEFT)
+	global SMP_input
+	SMP_input=tk.Entry(SMP_frame, width=20)
+	SMP_input.pack(anchor=tk.N, side=tk.RIGHT, expand=tk.YES, fill=tk.X)
+	
 
 	connect_button = tk.Button(root, text="Connect", command=lambda: connect(root, connect_role, nick_input, other_nick_input))
 	connect_button.pack(expand=tk.YES, fill=tk.BOTH)
@@ -379,7 +392,7 @@ def add_contact(window, ratchet_textbox, handshake_textbox, identity_textbox, ot
 	handshake = handshake_textbox.get()
 	ratchet = ratchet_textbox.get()
 
-	newaxo.initState(OTHER_NICK, binascii.a2b_base64(identity), binascii.a2b_base64(handshake),binascii.a2b_base64(ratchet), verify=False)
+	newaxo.initState(OTHER_NICK, binascii.a2b_base64(identity), binascii.a2b_base64(handshake), binascii.a2b_base64(ratchet), verify=True)
 	newaxo.saveState()
 	window.destroy() 
 
@@ -436,10 +449,20 @@ class Server (threading.Thread):
         conn, addr = s.accept()
         print "accepted!"
         dummy="test" #need this b/c I need to pass in two arguments, I get an error if I just try to pass in conn :(
-        writeToScreen("You are now connected with " + OTHER_NICK+'\n')
-        #chat_window.config(state=tk.NORMAL)
-        #chat_window.insert(tk.END, "You are now connected with " + OTHER_NICK+'\n')
 
+        writeToScreen('Running SMP...\n')
+        print SMP_KEY
+        secret = a.state['DHIs'] + SMP_KEY + a.state['DHIr'] + a.state['CONVid']
+        smp_match = smptest(secret, conn, True)
+        if not smp_match:
+        	global NICK, OTHER_NICK
+        	NICK="SELF"
+        	OTHER_NICK=""
+        	a.saveState()
+        	sys.exit()
+        	conn.close()
+
+        writeToScreen("You are now connected with " + OTHER_NICK+'\n')
         threading.Thread(target=Runner, args=(conn, dummy)).start()
   
 
@@ -463,10 +486,20 @@ class Client (threading.Thread):
         	print message
         	exit()
 
+        writeToScreen('Running SMP...\n')
+        secret = a.state['DHIr'] + SMP_KEY + a.state['DHIs'] + a.state['CONVid']
+        print SMP_KEY
+        smp_match = smptest(secret, conn, False)
+        if not smp_match:
+        	global NICK, OTHER_NICK
+        	NICK="SELF"
+        	OTHER_NICK=""
+        	a.saveState()
+        	sys.exit()  
+        	conn.close()   	
+
         dummy="test" #need this b/c I need to pass in two arguments, I get an error if I just try to pass in conn :(
         writeToScreen("You are now connected with " + OTHER_NICK+'\n')
-    	#chat_window.config(state=tk.NORMAL)
-        #chat_window.insert(tk.END, "You are now connected with " + OTHER_NICK)
         threading.Thread(target=Runner, args=(conn, dummy)).start()
   
 def Runner(conn, dummy):
@@ -508,10 +541,10 @@ def main():
 	top_frame_rgb = "#%02x%02x%02x" % (64, 64, 64)
 	root = tk.Tk()
 	root.title("Chat")	#root window
-	top_frame=tk.Frame(root, width=40, height=25, bg=top_frame_rgb) #chat window frame
+	top_frame=tk.Frame(root, width=45, height=25, bg=top_frame_rgb) #chat window frame
 	top_frame.pack(side=tk.TOP, expand=tk.YES, fill=tk.BOTH)
 	top_frame.config(highlightbackground="black")
-	bottom_frame=tk.Frame(root, width=40, height=5, bg="black") #enter text frame frame
+	bottom_frame=tk.Frame(root, width=45, height=5, bg="black") #enter text frame frame
 	bottom_frame.pack(side=tk.BOTTOM, expand=tk.YES, fill=tk.BOTH)
 	bottom_frame.config(highlightbackground="black")
 	#-----------------------------------------------------------------------#
@@ -537,7 +570,7 @@ def main():
 	# the radio buttons for a user to select whether they will be the         #
 	# client or the server & the buttons add contacts or connect to a contact #
  	#-------------------------------------------------------------------------#
-	text_input = tk.Text(bottom_frame, width=40, height=5) #create text input
+	text_input = tk.Text(bottom_frame, width=45, height=5) #create text input
 	text_input.pack(side=tk.LEFT, expand=tk.YES, fill=tk.BOTH)
 	text_input.config(highlightbackground="black")
 
